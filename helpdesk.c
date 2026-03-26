@@ -172,6 +172,39 @@ static void reportEngineerLoad()
 
 
 int main()
-{
+{  
+    // 1. Initialize System (Person 4's area)
+    loadTickets(); // You'll need to make this non-static or call a wrapper
+    printf("SSN Helpdesk System Initialized...\n");
+
+    // 2. The Interface (Your area)
+    int choice;
+    while(1) {
+        printf("\n--- SSN Helpdesk ---\n1. Raise Ticket\n2. View All Tickets (Admin)\n3. Exit\nChoice: ");
+        scanf("%d", &choice);
+        getchar(); // Clean newline
+
+        if(choice == 1) {
+            char issue[100];
+            printf("Enter Issue (Furniture/WiFi/Hardware): ");
+            fgets(issue, 100, stdin);
+            issue[strcspn(issue, "\n")] = 0; // Remove newline
+
+            // Call teammate's core logic (Assuming user ID 1 for demo)
+            Ticket* t = createTicket(1, issue); 
+            if(t) printf("Ticket Created! ID: %d | Assigned to Engineer ID: %d\n", t->id, t->eid);
+        } 
+        else if(choice == 2) {
+            // Call Person 4's reporting logic
+            printf("\nID  | Issue Type | Status | Engineer\n");
+            for(int i=0; i<ticketCount; i++) {
+                printf("%d | %s | %d | %d\n", tickets[i].id, issueNames[tickets[i].issueType], tickets[i].status, tickets[i].eid);
+            }
+        } else {
+            break;
+        }
+    }
+    return 0;
+}
 
 }
