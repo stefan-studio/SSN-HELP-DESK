@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SSN IT Helpdesk | Submit Ticket</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Raise a New Ticket</h2>
+        <form id="ticketForm">
+            <label for="category">Category</label>
+            <select id="category" name="category" required>
+                <option value="">Select Category...</option>
+                <option value="Hostel">Hostel</option>
+                <option value="Department">Department</option>
+                <option value="General">General</option>
+            </select>
+
+            <label for="description">Issue Description</label>
+            <textarea id="description" placeholder="Describe the problem..." required></textarea>
+
+            <label for="evidence">Upload Evidence (Photo)</label>
+            <input type="file" id="evidence" accept="image/*">
+
+            <button type="submit">Submit Ticket</button>
+        </form>
+    </div>
+</body>
+</html>
