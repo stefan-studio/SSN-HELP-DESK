@@ -173,38 +173,40 @@ static void reportEngineerLoad()
 
 int main()
 {  
-    // 1. Initialize System (Person 4's area)
-    loadTickets(); // You'll need to make this non-static or call a wrapper
-    printf("SSN Helpdesk System Initialized...\n");
-
-    // 2. The Interface (Your area)
     int choice;
-    while(1) {
-        printf("\n--- SSN Helpdesk ---\n1. Raise Ticket\n2. View All Tickets (Admin)\n3. Exit\nChoice: ");
-        scanf("%d", &choice);
-        getchar(); // Clean newline
+    char issueInput[MAX_DESCRIPTION_LEN];
+    int demoUserID = 2510161; // Your ID for the demo
 
-        if(choice == 1) {
-            char issue[100];
-            printf("Enter Issue (Furniture/WiFi/Hardware): ");
-            fgets(issue, 100, stdin);
-            issue[strcspn(issue, "\n")] = 0; // Remove newline
+    while (1) {
+        printf("\n==============================");
+        printf("\n   SSN IT HELPDESK PORTAL   ");
+        printf("\n==============================");
+        printf("\n1. Raise a New Ticket");
+        printf("\n2. Exit System");
+        printf("\nChoose an option: ");
+        
+        if (scanf("%d", &choice) != 1) break;
+        getchar(); // This clears the "Enter" key from memory
 
-            // Call teammate's core logic (Assuming user ID 1 for demo)
-            Ticket* t = createTicket(1, issue); 
-            if(t) printf("Ticket Created! ID: %d | Assigned to Engineer ID: %d\n", t->id, t->eid);
-        } 
-        else if(choice == 2) {
-            // Call Person 4's reporting logic
-            printf("\nID  | Issue Type | Status | Engineer\n");
-            for(int i=0; i<ticketCount; i++) {
-                printf("%d | %s | %d | %d\n", tickets[i].id, issueNames[tickets[i].issueType], tickets[i].status, tickets[i].eid);
+        if (choice == 1) {
+            printf("\nEnter Issue (WiFi/Hardware/Software): ");
+            fgets(issueInput, MAX_DESCRIPTION_LEN, stdin);
+            issueInput[strcspn(issueInput, "\n")] = 0; // Cleans the text
+
+            // This calls your teammate's core logic!
+            Ticket* t = createTicket(demoUserID, issueInput);
+            
+            if (t != NULL) {
+                printf("\n✅ TICKET CREATED!");
+                printf("\nID: %d | Assigned to Engineer ID: %d\n", t->id, t->eid);
             }
-        } else {
+        } 
+        else if (choice == 2) {
+            printf("\nExiting... See you tomorrow!\n");
             break;
         }
     }
     return 0;
 }
 
-}
+    
