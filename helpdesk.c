@@ -7,84 +7,86 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_TICKETS 1000
-#define MAX_USERS 500
-#define MAX_ENGINEERS 100
-#define MAX_USERNAME_LEN 50
-#define MAX_PASSWORD_LEN 50
-#define MAX_DESCRIPTION_LEN 256
+// Global Queue instance
+TicketQueue myQueue = {NULL, NULL};
 
-static Ticket   tickets[MAX_TICKETS];
-static User     users[MAX_USERS];
-static Engineer engineers[MAX_ENGINEERS];
-static int ticketCount   = 0;
-static int userCount     = 0;
-static int engineerCount = 0;
+// Constants for categorization (SCRUM-4)
+const char* categories[] = {"Hostel", "Department", "General", "Other"};
 
-const char* issueNames[] = {
-    "Furniture",
-    "WiFi",
-    "Network",
-    "Hardware",
-    "Software",
-    "Other"
-};
+// --- SYLLABUS CORE: QUEUE OPERATIONS ---
 
-const char* statusNames[] = {
-    "Open",
-    "Assigned",
-    "In Progress",
-    "Resolved",
-    "Closed"
-};
-
-
-const char* getIssueName(enum IssueType issue) {
-    return issueNames[issue];
+void initQueue(TicketQueue* q) {
+    q->front = q->rear = NULL;
 }
-enum IssueType parseIssueType(const char* issueStr) {
-    for (int i = 0; i < (sizeof(issueNames)/sizeof(char*)); i++) {
-        if (strcmp(issueNames[i], issueStr) == 0) {
-            return (enum IssueType)i;
+
+void viewHistory(TicketQueue* q, int studentID) {
+    Ticket* temp = q->front;
+    printf("\n--- Ticket History for Student ID: %d ---", studentID);
+    
+    int found = 0;
+    while (temp != NULL) {
+        if (temp->uid == studentID) {
+            printf("\n[%s] Ticket #%d: %s | Status: %s", 
+                    temp->category, temp->id, temp->description, temp->status);
+            found = 1;
         }
+        temp = temp->next; // Move to the next node in the Linked List
     }
-    return OTHER;
+    
+    if (!found) printf("\nNo tickets found.");
+    printf("\n---------------------------------------");
 }
 
+void displayAllTickets(TicketQueue* q) {
+    Ticket* temp = q->front; // Start at the beginning
+    
+    if (temp == NULL) {
+        printf("\n[Info] No active tickets in the system.\n");
+        return;
+    }
 
-// Load tickets from file into memory
-static void loadTickets() {
-    FILE* f = fopen("tickets.db", "rb");
-    if (!f) return;
-    fread(&ticketCount, sizeof(int), 1, f);
-    fread(tickets, sizeof(Ticket), ticketCount, f);
-    fclose(f);
+    printf("\n--- SYSTEM TICKET REPORT ---");
+    while (temp != NULL) {
+        printf("\nID: %d | Category: %s | Status: %s", 
+                temp->id, temp->category, temp->status);
+        printf("\nDescription: %s", temp->description);
+        printf("\n----------------------------");
+        
+        temp = temp->next; // The "Link" part of Linked List
+    }
 }
 
-//Save tickets in server to the database
-int syncTickets()
-{
-    FILE* f = fopen("tickets.db", "wb");
-    if (!f) return -1;
-    fwrite(&ticketCount, sizeof(int), 1, f);
-    fwrite(tickets, sizeof(Ticket), ticketCount, f);
-    fclose(f);
-    return 0;
+// SCRUM-9: Ticket Creation Logic (Enqueue)
+void enqueue(TicketQueue* q, int uid, char* cat, char* desc, char* file) {
+    // 1. Dynamic Allocation (Syllabus: malloc)
+    Ticket* newNode = (Ticket*)malloc(sizeof(Ticket));
+    if (!newNode) {
+        printf("Memory Error!\n");
+        return;
+    }
+
+    // 2. Data Initialization
+    newNode->id = genTicketID();
+    newNode->uid = uid;
+    strncpy(newNode->category, cat, 29);
+    strncpy(newNode->description, desc, 255);
+    strncpy(newNode->evidencePath, file, 255);
+    strcpy(newNode->status, "Open");
+    newNode->timeCreated = time(NULL);
+    newNode->next = NULL;
+
+    // 3. Queue Logic (Linking the nodes)
+    if (q->rear == NULL) {
+        q->front = q->rear = newNode;
+    } else {
+        q->rear->next = newNode;
+        q->rear = newNode;
+    }
 }
 
-//authenticate user info with db
-// Returns user id on success, -1 on failure
-int authenticateUser(char* username, char* password) {
-    for (int i = 0; i < userCount; i++)
-        if (strcmp(users[i].username, username) == 0 &&
-            strcmp(users[i].password, password) == 0)
-            return users[i].id;
-    return -1;
-}
+// --- UTILITY FUNCTIONS ---
 
-//returns a unique ticket id
-int genTicketID()
-{
+int genTicketID() {
     int lastID = 0;
     FILE* f = fopen("ticket_counter.dat", "rb");
     if (f) { fread(&lastID, sizeof(int), 1, f); fclose(f); }
@@ -94,120 +96,66 @@ int genTicketID()
     return lastID;
 }
 
-void assignEngineer(Ticket* ticket);
+// --- MODULE A: SUBMISSION UI HANDLER ---
 
-//Create and return new tickets
-Ticket* createTicket(int uid,char* issue)
-{
-    if (ticketCount >= MAX_TICKETS) return NULL;
-
-    Ticket* t = &tickets[ticketCount++];
-    t->id          = genTicketID();
-    t->uid         = uid;
-    t->eid         = -1;
-    t->issueType   = parseIssueType(issue);
-    t->status      = OPEN;
-    t->timeCreated = time(NULL);
-    t->timeAssigned = 0;
-    t->timeClosed  = 0;
-    strncpy(t->description, issue, MAX_DESCRIPTION_LEN - 1);
-    t->notes[0]    = '\0';
-
-    assignEngineer(t);
-    syncTickets();
-    return t;
-}
-
-//Closes an open ticket after work is done
-void closeTicket(Ticket* ticket)
-{
-    ticket->status    = CLOSED;
-    ticket->timeClosed = time(NULL);
-
-    // Update engineer stats
-    for (int i = 0; i < engineerCount; i++) {
-        if (engineers[i].id == ticket->eid) {
-            engineers[i].ticketsResolved++;
-            break;
-        }
-    }
-    syncTickets();
-    printf("Ticket #%d closed.\n", ticket->id);
-}
-
-//assigns a service engineer to the issue
-void assignEngineer(Ticket* ticket)
-{
-    int bestIdx = -1, minLoad = INT_MAX;
-    for (int i = 0; i < engineerCount; i++) {
-        if (engineers[i].specialty == ticket->issueType &&
-            engineers[i].ticketsAssigned < minLoad) {
-            minLoad = engineers[i].ticketsAssigned;
-            bestIdx = i;
-            }
-    }
-    if (bestIdx == -1) {
-        for (int i = 0; i < engineerCount; i++) {
-            if (engineers[i].ticketsAssigned < minLoad) {
-                minLoad = engineers[i].ticketsAssigned;
-                bestIdx = i;
-            }
-        }
-    }
-    if (bestIdx == -1) return;
-
-    ticket->eid         = engineers[bestIdx].id;
-    ticket->status      = ASSIGNED;
-    ticket->timeAssigned = time(NULL);
-    engineers[bestIdx].ticketsAssigned++;
-}
-
-static void reportAllTickets() {
-
-}
-
-static void reportEngineerLoad()
-{
-
-}
-
-
-int main()
-{  
+int main() {
     int choice;
-    char issueInput[MAX_DESCRIPTION_LEN];
-    int demoUserID = 2510161; // Your ID for the demo
+    int demoUserID = 2510161; 
+    char catInput[30];
+    char descInput[256];
+    char fileInput[256];
+
+    initQueue(&myQueue);
 
     while (1) {
-        printf("\n==============================");
-        printf("\n   SSN IT HELPDESK PORTAL   ");
-        printf("\n==============================");
-        printf("\n1. Raise a New Ticket");
-        printf("\n2. Exit System");
+        printf("\n====================================");
+        printf("\n   SSN IT HELPDESK - MODULE A      ");
+        printf("\n====================================");
+        printf("\n1. Raise a New Ticket (Submission)");
+        printf("\n2. View Queue (Linked List Traversal)");
+        printf("\n3. Exit System");
         printf("\nChoose an option: ");
         
         if (scanf("%d", &choice) != 1) break;
-        getchar(); // This clears the "Enter" key from memory
+        getchar(); // Clear buffer
 
-        if (choice == 1) {
-            printf("\nEnter Issue (WiFi/Hardware/Software): ");
-            fgets(issueInput, MAX_DESCRIPTION_LEN, stdin);
-            issueInput[strcspn(issueInput, "\n")] = 0; // Cleans the text
+        switch(choice) {
+            case 1:
+                printf("\nEnter Category (Hostel/Dept/General): ");
+                fgets(catInput, 30, stdin);
+                catInput[strcspn(catInput, "\n")] = 0;
 
-            // This calls your teammate's core logic!
-            Ticket* t = createTicket(demoUserID, issueInput);
-            
-            if (t != NULL) {
-                printf("\n✅ TICKET CREATED!");
-                printf("\nID: %d | Assigned to Engineer ID: %d\n", t->id, t->eid);
-            }
-        } 
-        else if (choice == 2) {
-            printf("\nExiting... See you tomorrow!\n");
-            break;
+                printf("Enter Description: ");
+                fgets(descInput, 256, stdin);
+                descInput[strcspn(descInput, "\n")] = 0;
+
+                printf("Upload Evidence Path (SCRUM-5): ");
+                fgets(fileInput, 256, stdin);
+                fileInput[strcspn(fileInput, "\n")] = 0;
+
+                enqueue(&myQueue, demoUserID, catInput, descInput, fileInput);
+                printf("\n✅ TICKET SUBMITTED SUCCESSFULLY!");
+                break;
+
+            case 2:
+                // Syllabus: Linked List Traversal
+                printf("\n--- CURRENT TICKET QUEUE ---");
+                Ticket* temp = myQueue.front;
+                if (!temp) printf("\nQueue is empty.");
+                while (temp) {
+                    printf("\nID: %d | Cat: %s | Status: %s", temp->id, temp->category, temp->status);
+                    temp = temp->next;
+                }
+                printf("\n----------------------------");
+                break;
+
+            case 3:
+                printf("\nExiting...\n");
+                return 0;
+
+            default:
+                printf("\nInvalid choice!");
         }
     }
     return 0;
 }
-
-    

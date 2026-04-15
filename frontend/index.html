@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SSN IT Helpdesk | Submit Ticket</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Raise a New Ticket</h2>
+        <form id="ticketForm">
+            <div class="form-row">
+    <div class="form-group">
+        <label for="block">Block / Hostel Name</label>
+        <input type="text" id="block" placeholder="e.g., Block 1 / Malligai" required>
+    </div>
+    <div class="form-group">
+        <label for="room">Room / Lab No.</label>
+        <input type="text" id="room" placeholder="e.g., 204 / CSE Lab 1" required>
+    </div>
+</div>
+
+<label for="category">Issue Category</label>
+<select id="category" name="category" required>
+    <option value="">-- Select Service Type --</option>
+    
+    <optgroup label="IT & Connectivity">
+        <option value="WiFi-Login">WiFi Login / Authentication</option>
+        <option value="Internet-Speed">Slow Internet Speed</option>
+        <option value="LAN-Port">Broken LAN Port</option>
+    </optgroup>
+
+    <optgroup label="Academic Facilities">
+        <option value="Projector-AV">Projector / Audio-Visual</option>
+        <option value="Lab-Equipment">Lab PC / Hardware Failure</option>
+        <option value="Software-Install">Software Installation Request</option>
+    </optgroup>
+
+    <optgroup label="Maintenance (Civil/Elec)">
+        <option value="Elec-Power">Power Outage / Socket Issue</option>
+        <option value="Elec-Fan">Fan / AC Repair</option>
+        <option value="Civil-Leakage">Water Leakage / Plumbing</option>
+        <option value="Civil-Carpentry">Furniture / Door Repair</option>
+    </optgroup>
+
+    <optgroup label="Other Services">
+        <option value="ID-Card">ID Card Replacement</option>
+        <option value="Biometric">Biometric Attendance Issue</option>
+    </optgroup>
+</select>
+
+<label for="phone">Contact Number (Internal/Mobile)</label>
+<input type="tel" id="phone" placeholder="Your contact for technician reach-out" required>
+
+<label for="description">Detailed Description</label>
+<textarea id="description" rows="4" placeholder="Please provide specific details to help the engineer..."></textarea>
+
+<label for="evidence">Upload Evidence Photo (Optional)</label>
+<div class="file-upload-box">
+    <input type="file" id="evidence" accept="image/*">
+    <p class="file-hint">Upload a photo of the broken item (Max 5MB)</p>
+</div>
+
+<button type="submit" class="submit-btn">Submit Official Request</button>
+        </form>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

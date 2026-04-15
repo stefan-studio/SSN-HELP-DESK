@@ -1,68 +1,32 @@
+#ifndef HELPDESK_H
+#define HELPDESK_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <time.h>
 
-#define MAX_TICKETS 1000
-#define MAX_USERS 500
-#define MAX_ENGINEERS 100
-#define MAX_USERNAME_LEN 50
-#define MAX_PASSWORD_LEN 50
-#define MAX_DESCRIPTION_LEN 256
-#define MAX_NOTES_LEN 512
-
-// Enums
-enum IssueType {
-    FURNITURE = 0,
-    WIFI = 1,
-    NETWORK = 2,
-    HARDWARE = 3,
-    SOFTWARE = 4,
-    OTHER = 5
-};
-
-enum TicketStatus {
-    OPEN = 0,
-    ASSIGNED = 1,
-    IN_PROGRESS = 2,
-    RESOLVED = 3,
-    CLOSED = 4
-};
-
-enum UserRole {
-    STAFF = 0,
-    ENGINEER = 1,
-    MANAGER = 2
-};
-
-// Structures
-typedef struct {
-    int id;
-    char username[MAX_USERNAME_LEN];
-    char password[MAX_PASSWORD_LEN];
-    enum UserRole role;
-    char name[MAX_USERNAME_LEN];
-} User;
-
-typedef struct {
-    int id;
-    char name[MAX_USERNAME_LEN];
-    enum IssueType specialty;
-    int ticketsAssigned;
-    int ticketsResolved;
-} Engineer;
-
-typedef struct {
-    time_t timeCreated;
-    time_t timeAssigned;
-    time_t timeClosed;
-    enum IssueType issueType;
-    char description[MAX_DESCRIPTION_LEN];
+typedef struct Ticket {
     int id;
     int uid;
-    int eid;
-    enum TicketStatus status;
-    char notes[MAX_NOTES_LEN];
+    char block[30];      // Added
+    char room[20];       // Added
+    char category[50];   // Expanded
+    char phone[15];      // Added
+    char description[512];
+    char evidencePath[256];
+    char status[20];
+    struct Ticket* next;
 } Ticket;
+
+// Syllabus: Struct for the Queue
+typedef struct {
+    Ticket* front; // Points to the first ticket in line
+    Ticket* rear;  // Points to the last ticket in line
+} TicketQueue;
+
+// Function Prototypes for Module A
+void initQueue(TicketQueue* q);
+void enqueue(TicketQueue* q, int uid, char* cat, char* desc, char* file);
+Ticket* dequeue(TicketQueue* q);
+int genTicketID();
+
+#endif
 
