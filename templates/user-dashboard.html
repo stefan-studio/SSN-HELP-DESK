@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>User Dashboard — HelpDesk SSN</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --navy:#0d2148; --navy-mid:#163580; --blue:#1e4db7; --accent:#e8a020; --light-bg:#f4f6fb; --border:#d6dde8; --text:#1a2340; --muted:#6b7a99; --sidebar-w:256px; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; background:var(--light-bg); color:var(--text); }
+
+    .sidebar { width:var(--sidebar-w); min-height:100vh; background:var(--navy); position:fixed; top:0; left:0; display:flex; flex-direction:column; z-index:100; transition:transform .3s ease; }
+    .sidebar-brand { padding:1.5rem 1.25rem; border-bottom:1px solid rgba(255,255,255,.1); display:flex; align-items:center; gap:.7rem; }
+    .sidebar-brand .icon { width:38px; height:38px; background:var(--accent); border-radius:9px; display:grid; place-items:center; color:#fff; font-size:1.15rem; }
+    .sidebar-brand .brand-name { font-family:'DM Serif Display',serif; font-size:1.15rem; color:#fff; line-height:1.1; }
+    .sidebar-brand .brand-sub { font-size:.7rem; color:rgba(255,255,255,.5); letter-spacing:.06em; text-transform:uppercase; }
+    .sidebar-user { padding:1rem 1.25rem; background:rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.08); display:flex; align-items:center; gap:.7rem; }
+    .user-avatar { width:36px; height:36px; background:linear-gradient(135deg,var(--blue),#4a90e2); border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:700; font-size:.9rem; }
+    .user-info .uname { font-size:.88rem; font-weight:600; color:#fff; }
+    .user-info .urole { font-size:.73rem; color:rgba(255,255,255,.5); }
+    .sidebar-nav { flex:1; padding:1rem 0; }
+    .nav-label { font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.35); padding:.5rem 1.25rem .25rem; }
+    .nav-item { padding:0 .75rem; margin-bottom:2px; }
+    .nav-link-item { display:flex; align-items:center; gap:.65rem; padding:.6rem .75rem; border-radius:8px; color:rgba(255,255,255,.65); font-size:.9rem; font-weight:500; cursor:pointer; text-decoration:none; transition:all .15s ease; }
+    .nav-link-item:hover { background:rgba(255,255,255,.08); color:#fff; }
+    .nav-link-item.active { background:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(30,77,183,.4); }
+    .nav-link-item i { font-size:1rem; width:18px; text-align:center; }
+    .sidebar-footer { padding:1rem .75rem; border-top:1px solid rgba(255,255,255,.1); }
+
+    .main-wrap { margin-left:var(--sidebar-w); min-height:100vh; display:flex; flex-direction:column; }
+    .topbar { background:#fff; border-bottom:1px solid var(--border); padding:0 1.75rem; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:90; }
+    .topbar-title { font-family:'DM Serif Display',serif; font-size:1.3rem; color:var(--text); }
+    .topbar-actions { display:flex; align-items:center; gap:.75rem; }
+    .topbar-btn { width:38px; height:38px; border:1.5px solid var(--border); border-radius:8px; background:#fff; display:grid; place-items:center; color:var(--muted); cursor:pointer; transition:all .15s; }
+    .topbar-btn:hover { border-color:var(--blue); color:var(--blue); }
+
+    .main-content { padding:2rem 1.75rem; flex:1; }
+    .section-header { display:flex; align-items:center; gap:.6rem; margin-bottom:1.25rem; }
+    .section-header .dot { width:4px; height:28px; background:var(--blue); border-radius:4px; }
+    .section-header h3 { font-family:'DM Serif Display',serif; font-size:1.3rem; color:var(--text); margin:0; }
+
+    .card-custom { background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:0 1px 4px rgba(0,0,0,.05); overflow:hidden; }
+    .card-custom .card-head { padding:1.1rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .card-custom .card-head h5 { font-weight:600; font-size:.95rem; margin:0; color:var(--text); display:flex; align-items:center; gap:.5rem; }
+    .card-custom .card-body-inner { padding:1.5rem; }
+
+    .stat-card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:1.1rem 1.25rem; display:flex; align-items:center; gap:1rem; }
+    .stat-icon { width:46px; height:46px; border-radius:11px; display:grid; place-items:center; font-size:1.25rem; flex-shrink:0; }
+    .stat-val { font-size:1.6rem; font-weight:700; color:var(--text); line-height:1; }
+    .stat-label { font-size:.78rem; color:var(--muted); margin-top:2px; }
+
+    .form-label { font-size:.8rem; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text); margin-bottom:.35rem; }
+    .form-control, .form-select { border:1.5px solid var(--border); border-radius:8px; padding:.6rem .9rem; font-family:'DM Sans',sans-serif; font-size:.92rem; color:var(--text); transition:border-color .2s,box-shadow .2s; }
+    .form-control:focus, .form-select:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(30,77,183,.1); }
+    textarea.form-control { resize:vertical; min-height:100px; }
+
+    .btn-primary-custom { background:linear-gradient(135deg,var(--blue),var(--navy-mid)); border:none; color:#fff; font-family:'DM Sans',sans-serif; font-weight:600; font-size:.9rem; padding:.65rem 1.5rem; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; transition:opacity .2s,transform .15s; }
+    .btn-primary-custom:hover { opacity:.9; transform:translateY(-1px); }
+    .btn-primary-custom:disabled { opacity:.65; cursor:not-allowed; transform:none; }
+
+    .table-custom { width:100%; border-collapse:collapse; }
+    .table-custom thead th { background:var(--light-bg); font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); padding:.75rem 1rem; border-bottom:1.5px solid var(--border); }
+    .table-custom tbody tr { border-bottom:1px solid #eef0f6; transition:background .12s; }
+    .table-custom tbody tr:hover { background:#f8f9fd; }
+    .table-custom td { padding:.8rem 1rem; font-size:.88rem; vertical-align:middle; }
+    .ticket-id { font-family:monospace; font-size:.85rem; color:var(--blue); font-weight:600; }
+
+    .badge-status { padding:.3em .75em; border-radius:999px; font-size:.75rem; font-weight:600; letter-spacing:.02em; }
+    .s-open       { background:#fff3cd; color:#8a6000; }
+    .s-assigned   { background:#cfe2ff; color:#0a3b80; }
+    .s-inprogress { background:#e0cffc; color:#4a1d96; }
+    .s-resolved   { background:#d1e7dd; color:#0a4e2d; }
+    .s-closed     { background:#e2e3e5; color:#41464b; }
+
+    .empty-state { text-align:center; padding:3rem 1rem; color:var(--muted); }
+    .empty-state i { font-size:2.5rem; opacity:.35; display:block; margin-bottom:.75rem; }
+
+    .toast-wrap { position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999; }
+
+    .sidebar-toggle { display:none; border:none; background:none; font-size:1.4rem; color:var(--text); cursor:pointer; }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:99; }
+    .sidebar-overlay.show { display:block; }
+
+    @media (max-width:991px) {
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.open { transform:translateX(0); }
+      .main-wrap { margin-left:0; }
+      .sidebar-toggle { display:inline-block; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="icon"><i class="bi bi-headset"></i></div>
+    <div>
+      <div class="brand-name">HelpDesk</div>
+      <div class="brand-sub">SSN Institutions</div>
+    </div>
+  </div>
+  <div class="sidebar-user">
+    <div class="user-avatar" id="avatar-initials">?</div>
+    <div class="user-info">
+      <div class="uname" id="sidebar-username">Loading…</div>
+      <div class="urole">Student / Staff</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Main</div>
+    <div class="nav-item">
+      <a class="nav-link-item active" onclick="showSection('raise')">
+        <i class="bi bi-plus-circle"></i> Raise a Ticket
+      </a>
+    </div>
+    <div class="nav-item">
+      <a class="nav-link-item" onclick="showSection('my-tickets')">
+        <i class="bi bi-ticket-detailed"></i> My Tickets
+      </a>
+    </div>
+    <div class="nav-label mt-2">Account</div>
+    <div class="nav-item">
+      <a class="nav-link-item" href="#">
+        <i class="bi bi-person-circle"></i> Profile
+      </a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <a class="nav-link-item" href="#" onclick="doLogout(event)">
+      <i class="bi bi-box-arrow-left"></i> Logout
+    </a>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="d-flex align-items-center gap-3">
+      <button class="sidebar-toggle" onclick="openSidebar()"><i class="bi bi-list"></i></button>
+      <span class="topbar-title" id="topbar-title">Raise a Ticket</span>
+    </div>
+    <div class="topbar-actions">
+      <div class="topbar-btn" title="Refresh" onclick="loadMyTickets()"><i class="bi bi-arrow-clockwise"></i></div>
+      <div class="topbar-btn" title="Notifications"><i class="bi bi-bell"></i></div>
+    </div>
+  </header>
+
+  <div class="main-content">
+
+    <!-- Stats row -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#e8f0fe"><i class="bi bi-ticket-detailed" style="color:var(--blue)"></i></div>
+          <div><div class="stat-val" id="stat-total">0</div><div class="stat-label">Total Raised</div></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#fff8e1"><i class="bi bi-clock" style="color:#e8a020"></i></div>
+          <div><div class="stat-val" id="stat-open">0</div><div class="stat-label">Open / Active</div></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#e8f5e9"><i class="bi bi-check-circle" style="color:#2e7d32"></i></div>
+          <div><div class="stat-val" id="stat-resolved">0</div><div class="stat-label">Resolved</div></div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:#f3e5f5"><i class="bi bi-person-check" style="color:#7b1fa2"></i></div>
+          <div><div class="stat-val" id="stat-assigned">0</div><div class="stat-label">Assigned</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION: Raise Ticket -->
+    <section id="section-raise">
+      <div class="section-header"><div class="dot"></div><h3>Raise a New Ticket</h3></div>
+      <div class="card-custom" style="max-width:620px">
+        <div class="card-head">
+          <h5><i class="bi bi-plus-circle text-primary"></i> New Support Request</h5>
+        </div>
+        <div class="card-body-inner">
+          <div id="form-error" style="display:none;background:#fff0f0;border:1px solid #fcc;border-radius:8px;padding:.7rem 1rem;margin-bottom:1rem;font-size:.85rem;color:#c0392b"></div>
+          <form id="raise-form" onsubmit="submitTicket(event)" novalidate>
+            <div class="mb-3">
+              <label class="form-label">Issue Category</label>
+              <select class="form-select" id="issue-type" required>
+                <option value="" disabled selected>Select a category…</option>
+                <option value="WiFi">📶 WiFi</option>
+                <option value="Network">🌐 Network</option>
+                <option value="Hardware">🖥️ Hardware</option>
+                <option value="Software">💾 Software</option>
+                <option value="Furniture">🪑 Furniture</option>
+                <option value="Other">🔧 Other</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Location / Room (optional)</label>
+              <input type="text" class="form-control" id="location" placeholder="e.g., Block A, Room 204"/>
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Issue Description</label>
+              <textarea class="form-control" id="description" rows="4" placeholder="Describe the issue in detail…" required></textarea>
+            </div>
+            <button type="submit" class="btn-primary-custom" id="btn-submit-ticket">
+              <i class="bi bi-send"></i> Submit Ticket
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: My Tickets -->
+    <section id="section-my-tickets" style="display:none">
+      <div class="section-header"><div class="dot"></div><h3>My Tickets</h3></div>
+      <div class="card-custom">
+        <div class="card-head">
+          <h5><i class="bi bi-list-ul text-primary"></i> All Your Requests</h5>
+          <span class="badge bg-secondary rounded-pill" id="ticket-count-badge">0</span>
+        </div>
+        <div id="tickets-loading" style="padding:2rem;text-align:center;color:var(--muted)">
+          <span class="spinner-border spinner-border-sm me-2"></span>Loading tickets…
+        </div>
+        <div class="table-responsive" id="tickets-table-wrap" style="display:none">
+          <table class="table-custom">
+            <thead>
+              <tr>
+                <th>Ticket ID</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Engineer</th>
+                <th>Raised On</th>
+              </tr>
+            </thead>
+            <tbody id="my-tickets-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-wrap">
+  <div id="app-toast" class="toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toast-msg">Done!</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // ── Session check ────────────────────────────────────────────────
+  const currentUserId = parseInt(sessionStorage.getItem('user_id') || '0', 10);
+  const currentName   = sessionStorage.getItem('full_name') || sessionStorage.getItem('username') || 'User';
+
+  if (!currentUserId) {
+    window.location.href = '/';
+  }
+
+  // Populate sidebar user info
+  document.getElementById('sidebar-username').textContent = currentName;
+  const initials = currentName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  document.getElementById('avatar-initials').textContent = initials;
+
+  // ── Status badge ─────────────────────────────────────────────────
+  const statusClass = { 'Open':'s-open','Assigned':'s-assigned','In Progress':'s-inprogress','Resolved':'s-resolved','Closed':'s-closed' };
+  function statusBadge(s) {
+    return `<span class="badge-status ${statusClass[s] || 's-open'}">${s}</span>`;
+  }
+
+  // ── Format ISO date to readable ──────────────────────────────────
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return iso.split('T')[0];
+  }
+
+  // ── Stats ────────────────────────────────────────────────────────
+  let myTickets = [];
+
+  function updateStats() {
+    document.getElementById('stat-total').textContent    = myTickets.length;
+    document.getElementById('stat-open').textContent     = myTickets.filter(t => ['Open','In Progress','Assigned'].includes(t.status)).length;
+    document.getElementById('stat-resolved').textContent = myTickets.filter(t => t.status === 'Resolved').length;
+    document.getElementById('stat-assigned').textContent = myTickets.filter(t => t.status === 'Assigned').length;
+  }
+
+  // ── Render ticket table ──────────────────────────────────────────
+  function renderMyTickets() {
+    const tbody = document.getElementById('my-tickets-tbody');
+    document.getElementById('ticket-count-badge').textContent = myTickets.length;
+
+    if (!myTickets.length) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="bi bi-inbox"></i>No tickets raised yet.</div></td></tr>`;
+    } else {
+      tbody.innerHTML = myTickets.map(t => `
+        <tr>
+          <td><span class="ticket-id">#${t.id}</span></td>
+          <td>${t.issue_type}</td>
+          <td style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${t.description}">${t.description}</td>
+          <td>${statusBadge(t.status)}</td>
+          <td>${t.engineer_id ? `<span style="font-size:.82rem;color:var(--muted)">ENG-${t.engineer_id}</span>` : '<span class="text-muted" style="font-size:.82rem">Unassigned</span>'}</td>
+          <td style="color:var(--muted);font-size:.82rem">${fmtDate(t.created_at)}</td>
+        </tr>`).join('');
+    }
+
+    document.getElementById('tickets-loading').style.display  = 'none';
+    document.getElementById('tickets-table-wrap').style.display = '';
+  }
+
+  // ── Load tickets from Flask API ───────────────────────────────────
+  async function loadMyTickets() {
+    document.getElementById('tickets-loading').style.display  = 'block';
+    document.getElementById('tickets-table-wrap').style.display = 'none';
+
+    try {
+      const res  = await fetch(`/api/tickets/${currentUserId}`);
+      const data = await res.json();
+
+      if (data.success) {
+        myTickets = data.tickets || [];
+        updateStats();
+        renderMyTickets();
+      } else {
+        showToast(data.error || 'Failed to load tickets.', 'danger');
+        document.getElementById('tickets-loading').innerHTML = `<span style="color:#c0392b">${data.error || 'Error loading tickets.'}</span>`;
+      }
+    } catch (err) {
+      showToast('Network error loading tickets.', 'danger');
+      document.getElementById('tickets-loading').innerHTML = '<span style="color:#c0392b">Network error.</span>';
+    }
+  }
+
+  // ── Submit ticket to Flask API ────────────────────────────────────
+  async function submitTicket(e) {
+    e.preventDefault();
+
+    const issueType   = document.getElementById('issue-type').value;
+    const location    = document.getElementById('location').value.trim();
+    const descRaw     = document.getElementById('description').value.trim();
+    const description = location ? `[${location}] ${descRaw}` : descRaw;
+
+    document.getElementById('form-error').style.display = 'none';
+
+    if (!issueType || !descRaw) {
+      const errEl = document.getElementById('form-error');
+      errEl.textContent = 'Please select a category and enter a description.';
+      errEl.style.display = 'block';
+      return;
+    }
+
+    const btn = document.getElementById('btn-submit-ticket');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting…';
+
+    try {
+      const res  = await fetch('/api/create_ticket', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ issue_type: issueType, description })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        const t = data.ticket;
+        myTickets.unshift({
+          id:          t.id,
+          issue_type:  t.issue_type,
+          status:      t.status,
+          description: t.description,
+          engineer_id: t.engineer_id,
+          created_at:  t.created_at
+        });
+        updateStats();
+        document.getElementById('raise-form').reset();
+        showToast(`Ticket #${t.id} submitted! Assigned to engineer ${t.engineer_id || 'TBD'}.`, 'success');
+        showSection('my-tickets');
+      } else {
+        const errEl = document.getElementById('form-error');
+        errEl.textContent = data.error || 'Failed to create ticket.';
+        errEl.style.display = 'block';
+      }
+    } catch (err) {
+      const errEl = document.getElementById('form-error');
+      errEl.textContent = 'Network error. Is the Flask server running?';
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-send"></i> Submit Ticket';
+    }
+  }
+
+  // ── Section switching ─────────────────────────────────────────────
+  const sections = { raise:'section-raise', 'my-tickets':'section-my-tickets' };
+  const titles   = { raise:'Raise a Ticket', 'my-tickets':'My Tickets' };
+
+  function showSection(key) {
+    Object.keys(sections).forEach(k => {
+      document.getElementById(sections[k]).style.display = (k === key) ? '' : 'none';
+    });
+    document.querySelectorAll('.nav-link-item').forEach((el, i) => {
+      el.classList.remove('active');
+      if ((key === 'raise' && i === 0) || (key === 'my-tickets' && i === 1)) el.classList.add('active');
+    });
+    document.getElementById('topbar-title').textContent = titles[key];
+    if (key === 'my-tickets') loadMyTickets();
+    closeSidebar();
+  }
+
+  // ── Toast ────────────────────────────────────────────────────────
+  function showToast(msg, type) {
+    const el = document.getElementById('app-toast');
+    document.getElementById('toast-msg').textContent = msg;
+    el.className = `toast align-items-center border-0 text-bg-${type === 'success' ? 'success' : 'danger'}`;
+    new bootstrap.Toast(el, { delay: 3500 }).show();
+  }
+
+  // ── Logout ───────────────────────────────────────────────────────
+  async function doLogout(e) {
+    e.preventDefault();
+    await fetch('/api/logout', { method: 'POST' });
+    sessionStorage.clear();
+    window.location.href = '/';
+  }
+
+  // ── Sidebar (mobile) ─────────────────────────────────────────────
+  function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('show'); }
+  function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('show'); }
+
+  // ── Init ─────────────────────────────────────────────────────────
+  updateStats();
+</script>
+</body>
+</html>
