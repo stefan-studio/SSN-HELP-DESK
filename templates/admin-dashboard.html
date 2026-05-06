@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Dashboard — HelpDesk SSN</title>
+  <title>Admin Dashboard — Shiv Nadar - SSN HelpDesk</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
-    :root { --navy:#0d2148; --navy-mid:#163580; --blue:#1e4db7; --accent:#e8a020; --light-bg:#f4f6fb; --border:#d6dde8; --text:#1a2340; --muted:#6b7a99; --sidebar-w:260px; }
+    :root { --navy:#052B54; --navy-mid:#004A8F; --blue:#0063B1; --accent:#e8a020; --light-bg:#F4F8FE; --border:#D9E4EF; --text:#1a2340; --muted:#6b7a99; --sidebar-w:260px; }
     * { box-sizing:border-box; margin:0; padding:0; }
     body { font-family:'DM Sans',sans-serif; background:var(--light-bg); color:var(--text); }
 
@@ -26,7 +26,7 @@
     .nav-item { padding:0 .75rem; margin-bottom:2px; }
     .nav-link-item { display:flex; align-items:center; gap:.65rem; padding:.6rem .75rem; border-radius:8px; color:rgba(255,255,255,.65); font-size:.9rem; font-weight:500; cursor:pointer; text-decoration:none; transition:all .15s ease; }
     .nav-link-item:hover { background:rgba(255,255,255,.08); color:#fff; }
-    .nav-link-item.active { background:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(30,77,183,.4); }
+    .nav-link-item.active { background:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(0,99,177,.35); }
     .nav-link-item i { font-size:1rem; width:18px; text-align:center; }
     .sidebar-footer { padding:1rem .75rem; border-top:1px solid rgba(255,255,255,.1); }
 
@@ -110,7 +110,7 @@
     <div class="brand-icon"><i class="bi bi-headset"></i></div>
     <div>
       <div class="brand-name">HelpDesk</div>
-      <div class="brand-sub">Admin Panel</div>
+      <div class="brand-sub">Shiv Nadar - SSN - Chennai</div>
     </div>
   </div>
   <div class="admin-badge-wrap">
@@ -389,7 +389,7 @@
 
     const catCounts = {};
     allTickets.forEach(t => { catCounts[t.issue_type] = (catCounts[t.issue_type]||0)+1; });
-    const catColors = { WiFi:'#1e4db7', Network:'#163580', Hardware:'#e8a020', Software:'#7b1fa2', Furniture:'#2e7d32', Other:'#0097a7' };
+    const catColors = { WiFi:'#0063B1', Network:'#004A8F', Hardware:'#e8a020', Software:'#7b1fa2', Furniture:'#2e7d32', Other:'#0097a7' };
     document.getElementById('category-breakdown').innerHTML = Object.entries(catCounts).map(([k,v]) => `
       <div style="margin-bottom:.6rem">
         <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px">
@@ -402,7 +402,7 @@
 
     const stCounts = {};
     allTickets.forEach(t => { stCounts[t.status] = (stCounts[t.status]||0)+1; });
-    const stColors = { Open:'#e8a020', Assigned:'#1e4db7', 'In Progress':'#7b1fa2', Resolved:'#2e7d32', Closed:'#6b7a99' };
+    const stColors = { Open:'#e8a020', Assigned:'#0063B1', 'In Progress':'#7b1fa2', Resolved:'#2e7d32', Closed:'#6b7a99' };
     document.getElementById('status-breakdown').innerHTML = Object.entries(stCounts).map(([k,v]) => `
       <div style="margin-bottom:.6rem">
         <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px">

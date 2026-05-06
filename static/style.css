@@ -1,13 +1,13 @@
-/* SSN & SNU Chennai Brand Identity Palette */
+/* Shiv Nadar - SSN - Chennai Brand Identity Palette */
 :root {
-  --ssn-ultramarine: #00205B;
+  --ssn-ultramarine: #0063B1;
   --ssn-gold: #C5A059;
-  --ssn-navy-light: #003399;
-  --light-bg: #F4F7FA;
+  --ssn-navy-light: #004A8F;
+  --light-bg: #F4F8FE;
   --white: #ffffff;
   --text-main: #1A202C;
-  --text-muted: #718096;
-  --border-color: #E2E8F0;
+  --text-muted: #64748B;
+  --border-color: #D9E4EF;
 }
 
 body { 
@@ -61,7 +61,7 @@ select, textarea, input {
 select:focus, textarea:focus, input:focus {
     border-color: var(--ssn-ultramarine);
     outline: none;
-    box-shadow: 0 0 0 4px rgba(0, 32, 91, 0.05);
+    box-shadow: 0 0 0 4px rgba(0, 99, 177, 0.12);
 }
 
 /* High-Priority / Submit Button */
