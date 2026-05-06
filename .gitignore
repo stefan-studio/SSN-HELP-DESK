@@ -1,0 +1,5 @@
+helpdesk.exe
+*.db
+*.dat
+.venv/
+__pycache__/

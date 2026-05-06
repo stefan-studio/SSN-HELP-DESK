@@ -1,161 +1,164 @@
-// Connected to Jira SCRUM-4
 #include "helpdesk.h"
 
-#include <limits.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
+#define TICKET_DB_MAGIC "HELPDSK"
+#define TICKET_DB_VERSION 1
 
-// Global Queue instance
-TicketQueue myQueue = {NULL, NULL};
+Ticket* ticketHead = NULL;
+int nextTicketId = 1000;
+const char *issueNames[] = {"Furniture", "WiFi", "Network", "Hardware", "Software", "Other"};
+const char *statusNames[] = {"Open", "Assigned", "In Progress", "Resolved", "Closed"};
 
-// Constants for categorization (SCRUM-4)
-const char* categories[] = {"Hostel", "Department", "General", "Other"};
-
-// --- SYLLABUS CORE: QUEUE OPERATIONS ---
-
-void initQueue(TicketQueue* q) {
-    q->front = q->rear = NULL;
-}
-
-void viewHistory(TicketQueue* q, int studentID) {
-    Ticket* temp = q->front;
-    printf("\n--- Ticket History for Student ID: %d ---", studentID);
-    
-    int found = 0;
-    while (temp != NULL) {
-        if (temp->uid == studentID) {
-            printf("\n[%s] Ticket #%d: %s | Status: %s", 
-                    temp->category, temp->id, temp->description, temp->status);
-            found = 1;
-        }
-        temp = temp->next; // Move to the next node in the Linked List
-    }
-    
-    if (!found) printf("\nNo tickets found.");
-    printf("\n---------------------------------------");
-}
-
-void displayAllTickets(TicketQueue* q) {
-    Ticket* temp = q->front; // Start at the beginning
-    
-    if (temp == NULL) {
-        printf("\n[Info] No active tickets in the system.\n");
+void addTicketByPriority(Ticket* newT) {
+    if (!ticketHead || newT->priority > ticketHead->priority) {
+        newT->next = ticketHead;
+        ticketHead = newT;
         return;
     }
-
-    printf("\n--- SYSTEM TICKET REPORT ---");
-    while (temp != NULL) {
-        printf("\nID: %d | Category: %s | Status: %s", 
-                temp->id, temp->category, temp->status);
-        printf("\nDescription: %s", temp->description);
-        printf("\n----------------------------");
-        
-        temp = temp->next; // The "Link" part of Linked List
+    Ticket* temp = ticketHead;
+    while (temp->next && temp->next->priority >= newT->priority) {
+        temp = temp->next;
     }
+    newT->next = temp->next;
+    temp->next = newT;
 }
 
-// SCRUM-9: Ticket Creation Logic (Enqueue)
-void enqueue(TicketQueue* q, int uid, char* cat, char* desc, char* file) {
-    // 1. Dynamic Allocation (Syllabus: malloc)
-    Ticket* newNode = (Ticket*)malloc(sizeof(Ticket));
-    if (!newNode) {
-        printf("Memory Error!\n");
-        return;
-    }
-
-    // 2. Data Initialization
-    newNode->id = genTicketID();
-    newNode->uid = uid;
-    strncpy(newNode->category, cat, 29);
-    strncpy(newNode->description, desc, 255);
-    strncpy(newNode->evidencePath, file, 255);
-    strcpy(newNode->status, "Open");
-    newNode->timeCreated = time(NULL);
-    newNode->next = NULL;
-
-    // 3. Queue Logic (Linking the nodes)
-    if (q->rear == NULL) {
-        q->front = q->rear = newNode;
-    } else {
-        q->rear->next = newNode;
-        q->rear = newNode;
-    }
-}
-
-// --- UTILITY FUNCTIONS ---
-
-int genTicketID() {
-    int lastID = 0;
-    FILE* f = fopen("ticket_counter.dat", "rb");
-    if (f) { fread(&lastID, sizeof(int), 1, f); fclose(f); }
-    lastID++;
-    f = fopen("ticket_counter.dat", "wb");
-    if (f) { fwrite(&lastID, sizeof(int), 1, f); fclose(f); }
-    return lastID;
-}
-
-// --- MODULE A: SUBMISSION UI HANDLER ---
-
-int main() {
-    int choice;
-    int demoUserID = 2510161; 
-    char catInput[30];
-    char descInput[256];
-    char fileInput[256];
-
-    initQueue(&myQueue);
-
-    while (1) {
-        printf("\n====================================");
-        printf("\n   SSN IT HELPDESK - MODULE A      ");
-        printf("\n====================================");
-        printf("\n1. Raise a New Ticket (Submission)");
-        printf("\n2. View Queue (Linked List Traversal)");
-        printf("\n3. Exit System");
-        printf("\nChoose an option: ");
-        
-        if (scanf("%d", &choice) != 1) break;
-        getchar(); // Clear buffer
-
-        switch(choice) {
-            case 1:
-                printf("\nEnter Category (Hostel/Dept/General): ");
-                fgets(catInput, 30, stdin);
-                catInput[strcspn(catInput, "\n")] = 0;
-
-                printf("Enter Description: ");
-                fgets(descInput, 256, stdin);
-                descInput[strcspn(descInput, "\n")] = 0;
-
-                printf("Upload Evidence Path (SCRUM-5): ");
-                fgets(fileInput, 256, stdin);
-                fileInput[strcspn(fileInput, "\n")] = 0;
-
-                enqueue(&myQueue, demoUserID, catInput, descInput, fileInput);
-                printf("\n✅ TICKET SUBMITTED SUCCESSFULLY!");
-                break;
-
-            case 2:
-                // Syllabus: Linked List Traversal
-                printf("\n--- CURRENT TICKET QUEUE ---");
-                Ticket* temp = myQueue.front;
-                if (!temp) printf("\nQueue is empty.");
-                while (temp) {
-                    printf("\nID: %d | Cat: %s | Status: %s", temp->id, temp->category, temp->status);
-                    temp = temp->next;
-                }
-                printf("\n----------------------------");
-                break;
-
-            case 3:
-                printf("\nExiting...\n");
-                return 0;
-
+void printJsonString(const char *text) {
+    putchar('"');
+    for (const char *p = text; *p; ++p) {
+        switch (*p) {
+            case '\\': printf("\\\\"); break;
+            case '"': printf("\\\""); break;
+            case '\b': printf("\\b"); break;
+            case '\f': printf("\\f"); break;
+            case '\n': printf("\\n"); break;
+            case '\r': printf("\\r"); break;
+            case '\t': printf("\\t"); break;
             default:
-                printf("\nInvalid choice!");
+                if ((unsigned char)*p < 0x20) {
+                    printf("\\u%04x", (unsigned char)*p);
+                } else {
+                    putchar(*p);
+                }
         }
+    }
+    putchar('"');
+}
+
+int syncTickets(void) {
+    FILE *f = fopen("tickets.db", "wb");
+    if (!f) return -1;
+
+    TicketFileHeader header;
+    memcpy(header.magic, TICKET_DB_MAGIC, sizeof(header.magic));
+    header.version = TICKET_DB_VERSION;
+    header.nextTicketId = nextTicketId;
+    fwrite(&header, sizeof(header), 1, f);
+
+    for (Ticket* t = ticketHead; t; t = t->next) {
+        TicketRecord rec;
+        rec.id = t->id;
+        rec.uid = t->uid;
+        rec.priority = t->priority;
+        rec.issueType = t->issueType;
+        rec.status = t->status;
+        rec.timeCreated = t->timeCreated;
+        strncpy(rec.description, t->description, MAX_DESCRIPTION_LEN - 1);
+        rec.description[MAX_DESCRIPTION_LEN - 1] = '\0';
+        fwrite(&rec, sizeof(rec), 1, f);
+    }
+
+    fclose(f);
+    return 0;
+}
+
+void loadTickets(void) {
+    FILE *f = fopen("tickets.db", "rb");
+    if (!f) return;
+
+    TicketFileHeader header;
+    if (fread(&header, sizeof(header), 1, f) != 1 ||
+        memcmp(header.magic, TICKET_DB_MAGIC, sizeof(header.magic)) != 0 ||
+        header.version != TICKET_DB_VERSION) {
+        fclose(f);
+        return;
+    }
+    if (header.nextTicketId > 1000) {
+        nextTicketId = header.nextTicketId;
+    }
+
+    TicketRecord rec;
+    while (fread(&rec, sizeof(rec), 1, f) == 1) {
+        Ticket* newT = (Ticket*)malloc(sizeof(Ticket));
+        if (!newT) break;
+        newT->id = rec.id;
+        newT->uid = rec.uid;
+        newT->priority = rec.priority;
+        newT->issueType = rec.issueType;
+        newT->status = rec.status;
+        newT->timeCreated = rec.timeCreated;
+        strncpy(newT->description, rec.description, MAX_DESCRIPTION_LEN - 1);
+        newT->description[MAX_DESCRIPTION_LEN - 1] = '\0';
+        newT->next = NULL;
+        addTicketByPriority(newT);
+    }
+
+    fclose(f);
+}
+
+Ticket *createTicket(int uid, const char *issueType, const char *description, int priority) {
+    Ticket* t = (Ticket*)malloc(sizeof(Ticket));
+    if (!t) return NULL;
+    if (priority < 1) priority = 1;
+    if (priority > 5) priority = 5;
+    t->id = nextTicketId++;
+    t->uid = uid;
+    t->priority = priority;
+    t->status = OPEN;
+    t->issueType = OTHER;
+    for(int i=0; i<6; i++) {
+        if(strcasecmp(issueNames[i], issueType) == 0) { t->issueType = i; break; }
+    }
+    strncpy(t->description, description, MAX_DESCRIPTION_LEN - 1);
+    t->description[MAX_DESCRIPTION_LEN-1] = '\0';
+    t->timeCreated = time(NULL);
+    t->next = NULL;
+    addTicketByPriority(t);
+    syncTickets();
+    return t;
+}
+
+int main(int argc, char *argv[]) {
+    srand(time(NULL));
+    loadTickets();
+    if (argc < 2) return 0;
+
+    if (strcmp(argv[1], "login") == 0 && argc >= 4) {
+        // Simple auth logic for demo
+        if(strcmp(argv[2], "admin") == 0 && strcmp(argv[3], "admin123") == 0)
+            printf("{\"success\":true,\"user_id\":1,\"role\":\"admin\"}\n");
+        else if(strcmp(argv[3], "1234") == 0)
+            printf("{\"success\":true,\"user_id\":101,\"role\":\"user\"}\n");
+        else
+            printf("{\"success\":false,\"error\":\"Invalid Credentials\"}\n");
+    } 
+    else if (strcmp(argv[1], "create_ticket") == 0 && argc >= 6) {
+        Ticket* t = createTicket(atoi(argv[2]), argv[3], argv[4], atoi(argv[5]));
+        printf("{\"success\":true,\"id\":%d}\n", t->id);
+    } 
+    else if (strcmp(argv[1], "list_tickets") == 0) {
+        int filterUid = (argc >= 3) ? atoi(argv[2]) : 0;
+        printf("{\"success\":true,\"tickets\":[");
+        int first = 1;
+        for (Ticket* t = ticketHead; t; t = t->next) {
+            if (filterUid == 0 || t->uid == filterUid) {
+                if (!first) printf(",");
+                printf("{\"id\":%d,\"status\":\"%s\",\"desc\":", t->id, statusNames[t->status]);
+                printJsonString(t->description);
+                printf(",\"priority\":%d}", t->priority);
+                first = 0;
+            }
+        }
+        printf("]}\n");
     }
     return 0;
 }
