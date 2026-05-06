@@ -36,10 +36,13 @@ def index():
 
 @app.route("/dashboard")
 def dashboard():
-    """Route for raising new tickets."""
+    """Route for showing the appropriate dashboard after login."""
     if "user_id" not in session:
         return redirect(url_for('index'))
-    return render_template("index.html", view="dashboard") # Or a separate dashboard.html
+
+    if session.get("role") == "admin":
+        return render_template("admin-dashboard.html")
+    return render_template("user-dashboard.html")
 
 @app.route("/history")
 def history():
@@ -62,8 +65,8 @@ def login():
             "role": res["role"],
             "username": data.get('username')
         })
-        # Institutional logic: Admin/Staff goes to full queue, Students to history
-        res["redirect"] = "/history"
+        # Send everyone to the dashboard page after successful login
+        res["redirect"] = "/dashboard"
     return jsonify(res)
 
 @app.route("/api/create_ticket", methods=["POST"])
