@@ -1,32 +1,73 @@
-# 🎫 SSN-Helpdesk: Smart Ticketing System
-**An Intelligent Service Management Solution for SSN Institutions.**
+SSN HelpDesk: Hybrid Systems Implementation
 
----
+A high-performance ticketing management system designed for Shiv Nadar - SSN Institutions. This project demonstrates a Hybrid Architecture, utilizing C for low-level memory management and data structures, and Python (Flask) for a modern, responsive web interface.
+🚀 The Core Innovation: Priority Queueing
 
-## 🚀 The Vision
-The **SSN-Helpdesk** is a role-based service management platform designed to streamline infrastructure and academic support. Unlike legacy systems, our solution focuses on **Automated Ticket Routing**, **Dynamic Field Allocation**, and **Real-time Status Transparency** for students, hostellers, and staff.
+Unlike standard helpdesks that use simple FIFO (First-In-First-Out) logic, this system implements a Priority Queue using a Sorted Linked List in C. This ensures that critical infrastructure issues (like network outages) are automatically escalated to the top of the queue.
+🛠️ Tech Stack
 
-## 🛠️ Tech Stack
-* **Frontend:** React.js / Tailwind CSS (Focus on Mobile-First UX)
-* **Backend:** Node.js / Express.js (RESTful API Architecture)
-* **Database:** MongoDB / PostgreSQL (Relational Service Mapping)
-* **Management:** Jira (Agile/Scrum Methodology)
+    Backend Engine: C (C11) – Handles logic, sorting, and binary file persistence.
 
-## 🎯 Key Features (v1.0)
-- **Role-Based Access Control (RBAC):** Distinct portals for Students, Service Engineers, and Admin.
-- **Smart Categorization:** Context-aware forms (e.g., Hostel vs. Departmental issues).
-- **Automated ID Generation:** Unique organizational tracking IDs (e.g., `SSN-IT-2026-001`).
-- **Priority Queue:** Service engineers view tickets based on urgency and department.
-- **Analytical Dashboard:** Management reports for service efficiency and bottleneck analysis.
+    Middleware: Python 3.12 + Flask – Serves as the API bridge and orchestrator.
 
-## 📅 Roadmap (Sprint 1)
-- [ ] Core Backend Module: Ticket Creation & Database Integration (Demo Friday!)
-- [ ] Frontend: Dynamic Ticket Submission UI
-- [ ] API: Unique ID Generation Logic
+    Frontend: HTML5, CSS3 (Bootstrap 5.3), JavaScript (ES6).
 
-## 👥 The Team (IT Dept)
-* **Frontend Architects:** [Srinivetha] & [Stefania]
-* **Backend Engineers:** [Sri Dhanvanth] & [Steve Winston]
+    Database: Binary File I/O (.db files) – Fast, low-overhead data storage.
 
----
-*Developed as part of the Information Technology Department Project, SSN College of Engineering.*
+🏗️ System Architecture
+
+The application utilizes a Subprocess Bridge to communicate between the high-level web server and the low-level logic engine:
+
+    Frontend: Collects user data and sends a JSON request via fetch().
+
+    Flask (Python): Validates the session and invokes the compiled C binary.
+
+    C Engine: Executes the requested operation (Create, List, Sort) and outputs a JSON string to STDOUT.
+
+    Flask: Captures the output and relays the JSON back to the user.
+
+📋 Features
+
+    Role-Based Access Control: Distinct dashboards for Students (Users) and Service Engineers (Admins).
+
+    Persistent Storage: Data is saved in a binary format to ensure it survives server restarts.
+
+    Dynamic Sorting: High-priority tickets (Level 5) are visually and logically prioritized over low-priority ones.
+
+    Responsive UI: Designed specifically with the SSN branding and professional DM Sans typography.
+
+⚙️ Setup & Installation
+1. Prerequisites
+
+    GCC Compiler (MinGW for Windows)
+
+    Python 3.10+
+
+    VS Code (Recommended)
+
+2. Compilation (The C Engine)
+
+First, compile the core logic engine into an executable:
+PowerShell
+
+gcc helpdesk.c -o helpdesk.exe
+
+3. Environment Setup
+
+Create a virtual environment and install dependencies:
+PowerShell
+
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install flask
+
+4. Run the Application
+PowerShell
+
+python app.py
+
+Access the portal at http://127.0.0.1:5000
+🧠 Data Structure Details
+
+
+    Communication Protocol: Standardized JSON exchange between C and Python.
