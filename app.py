@@ -38,8 +38,11 @@ def index():
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for('index'))
-    if session.get("role") == "admin":
+    role = session.get("role")
+    if role == "admin":
         return render_template("admin-dashboard.html") #
+    if role == "engineer":
+        return render_template("engineer-dashboard.html") #
     return render_template("user-dashboard.html") #
 
 # --- API Routes (Matching your HTML Fetch calls) ---
@@ -83,19 +86,8 @@ def create_ticket_api():
         logger.debug(f"C Engine response: {res}")
         
         # Format response to include full ticket object that the frontend expects
-        if res.get("success"):
-            ticket_id = res.get("id")
-            return jsonify({
-                "success": True,
-                "ticket": {
-                    "id": ticket_id,
-                    "issue_type": data.get('issue_type', 'Other'),
-                    "description": data.get('description', 'No description'),
-                    "status": "Open",
-                    "engineer_id": None,
-                    "created_at": None
-                }
-            })
+        if res.get("success") and "ticket" in res:
+            return jsonify(res) # C engine now returns full ticket
         return jsonify(res)
     except Exception as e:
         logger.error(f"Error creating ticket: {str(e)}", exc_info=True)
@@ -105,6 +97,13 @@ def create_ticket_api():
 def get_user_tickets(user_id):
     # C Engine expects: list_tickets <uid_filter>
     res = call_c_engine("list_tickets", user_id)
+    return jsonify(res)
+
+@app.route("/api/engineer/tickets/<int:eng_id>")
+def get_engineer_tickets(eng_id):
+    # C Engine expects: list_tickets <uid_filter> <eng_filter>
+    # We pass 0 for uid_filter to show all users, but filter by eng_id
+    res = call_c_engine("list_tickets", 0, eng_id)
     return jsonify(res)
 
 @app.route("/api/tickets")
@@ -120,17 +119,32 @@ def get_engineers():
     # Admin route: get all engineers
     if session.get("role") != "admin":
         return jsonify({"success": False, "error": "Admin access required"}), 403
-    res = call_c_engine("list_engineers")
+    
+    # The C engine currently returns hardcoded engineers.
+    # In a real system, this would load from a database.
+    res = call_c_engine("list_engineers") 
+    
+    # For demo, add dummy active_tickets and total_resolved
+    if res.get("success") and "engineers" in res:
+        for eng in res["engineers"]:
+            # Simulate workload: count tickets assigned to this engineer
+            all_tickets_res = call_c_engine("list_tickets", 0, eng["id"])
+            if all_tickets_res.get("success"):
+                eng["active_tickets"] = len([t for t in all_tickets_res["tickets"] if t["status"] not in ["Resolved", "Closed"]])
+                eng["total_resolved"] = len([t for t in all_tickets_res["tickets"] if t["status"] == "Resolved"])
+            else:
+                eng["active_tickets"] = 0
+                eng["total_resolved"] = 0
     return jsonify(res)
+
 
 @app.route("/api/close_ticket", methods=["POST"])
 def close_ticket():
     # Admin route: close a ticket
     if session.get("role") != "admin":
         return jsonify({"success": False, "error": "Admin access required"}), 403
-    data = request.json
-    res = call_c_engine("close_ticket", data.get('ticket_id'))
-    return jsonify(res)
+    data = request.json #
+    return jsonify(call_c_engine("close_ticket", data.get('ticket_id'))) #
 
 @app.route("/api/assign_ticket", methods=["POST"])
 def assign_ticket():
@@ -138,7 +152,20 @@ def assign_ticket():
     if session.get("role") != "admin":
         return jsonify({"success": False, "error": "Admin access required"}), 403
     data = request.json
-    res = call_c_engine("assign_ticket", data.get('ticket_id'), data.get('engineer_id'))
+    # C engine now returns the updated ticket object directly
+    res = call_c_engine("assign_ticket", data.get('ticket_id'), data.get('engineer_id')) 
+    return jsonify(res)
+
+@app.route("/api/update_ticket_status", methods=["POST"])
+def update_ticket_status():
+    # Engineer route: update status of an assigned ticket
+    if session.get("role") not in ["engineer", "admin"]:
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+    data = request.json
+    ticket_id = data.get('ticket_id')
+    new_status = data.get('status')
+    
+    res = call_c_engine("update_status", ticket_id, new_status)
     return jsonify(res)
 
 @app.route("/api/logout", methods=["POST", "GET"])
