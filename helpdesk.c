@@ -1,5 +1,11 @@
 #include "helpdesk.h"
 
+#ifdef _WIN32
+#define strcasecmp _stricmp
+#else
+#include <strings.h>
+#endif
+
 #define TICKET_DB_MAGIC "HELPDSK"
 #define TICKET_DB_VERSION 1
 
@@ -122,6 +128,7 @@ Ticket *createTicket(int uid, const char *issueType, const char *description, in
     t->description[MAX_DESCRIPTION_LEN-1] = '\0';
     t->timeCreated = time(NULL);
     t->next = NULL;
+
     addTicketByPriority(t);
     syncTickets();
     return t;
@@ -143,7 +150,11 @@ int main(int argc, char *argv[]) {
     } 
     else if (strcmp(argv[1], "create_ticket") == 0 && argc >= 6) {
         Ticket* t = createTicket(atoi(argv[2]), argv[3], argv[4], atoi(argv[5]));
-        printf("{\"success\":true,\"id\":%d}\n", t->id);
+        if (t) {
+            printf("{\"success\":true,\"id\":%d}\n", t->id);
+        } else {
+            printf("{\"success\":false,\"error\":\"Memory allocation failed\"}\n");
+        }
     } 
     else if (strcmp(argv[1], "list_tickets") == 0) {
         int filterUid = (argc >= 3) ? atoi(argv[2]) : 0;
