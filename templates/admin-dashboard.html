@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — HelpDesk SSN</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root { --navy:#0d2148; --navy-mid:#163580; --blue:#1e4db7; --accent:#e8a020; --light-bg:#f4f6fb; --border:#d6dde8; --text:#1a2340; --muted:#6b7a99; --sidebar-w:260px; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; background:var(--light-bg); color:var(--text); }
+
+    .sidebar { width:var(--sidebar-w); min-height:100vh; background:var(--navy); position:fixed; top:0; left:0; display:flex; flex-direction:column; z-index:100; transition:transform .3s ease; }
+    .sidebar-brand { padding:1.5rem 1.25rem; border-bottom:1px solid rgba(255,255,255,.1); display:flex; align-items:center; gap:.7rem; }
+    .brand-icon { width:38px; height:38px; background:var(--accent); border-radius:9px; display:grid; place-items:center; color:#fff; font-size:1.15rem; }
+    .brand-name { font-family:'DM Serif Display',serif; font-size:1.15rem; color:#fff; }
+    .brand-sub  { font-size:.7rem; color:rgba(255,255,255,.5); letter-spacing:.06em; text-transform:uppercase; }
+    .admin-badge-wrap { padding:.85rem 1.25rem; background:rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.08); display:flex; align-items:center; gap:.7rem; }
+    .admin-avatar { width:36px; height:36px; background:linear-gradient(135deg,var(--accent),#f5c842); border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:700; font-size:.85rem; }
+    .admin-info .aname { font-size:.88rem; font-weight:600; color:#fff; }
+    .admin-info .arole { font-size:.7rem; color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+    .sidebar-nav { flex:1; padding:1rem 0; }
+    .nav-label { font-size:.67rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.3); padding:.5rem 1.25rem .25rem; }
+    .nav-item { padding:0 .75rem; margin-bottom:2px; }
+    .nav-link-item { display:flex; align-items:center; gap:.65rem; padding:.6rem .75rem; border-radius:8px; color:rgba(255,255,255,.65); font-size:.9rem; font-weight:500; cursor:pointer; text-decoration:none; transition:all .15s ease; }
+    .nav-link-item:hover { background:rgba(255,255,255,.08); color:#fff; }
+    .nav-link-item.active { background:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(30,77,183,.4); }
+    .nav-link-item i { font-size:1rem; width:18px; text-align:center; }
+    .sidebar-footer { padding:1rem .75rem; border-top:1px solid rgba(255,255,255,.1); }
+
+    .main-wrap { margin-left:var(--sidebar-w); min-height:100vh; display:flex; flex-direction:column; }
+    .topbar { background:#fff; border-bottom:1px solid var(--border); padding:0 1.75rem; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:90; }
+    .topbar-title { font-family:'DM Serif Display',serif; font-size:1.3rem; color:var(--text); }
+    .topbar-actions { display:flex; align-items:center; gap:.75rem; }
+    .topbar-btn { width:38px; height:38px; border:1.5px solid var(--border); border-radius:8px; background:#fff; display:grid; place-items:center; color:var(--muted); cursor:pointer; transition:all .15s; }
+    .topbar-btn:hover { border-color:var(--blue); color:var(--blue); }
+    .admin-tag { background:rgba(232,160,32,.12); color:var(--accent); border:1px solid rgba(232,160,32,.3); border-radius:6px; font-size:.75rem; font-weight:700; padding:.25rem .6rem; letter-spacing:.05em; }
+
+    .main-content { padding:2rem 1.75rem; flex:1; }
+    .metric-card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:1.25rem 1.4rem; display:flex; align-items:flex-start; justify-content:space-between; transition:box-shadow .15s; }
+    .metric-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.07); }
+    .metric-card .m-val { font-size:2rem; font-weight:700; color:var(--text); line-height:1; }
+    .metric-card .m-label { font-size:.8rem; color:var(--muted); margin-top:4px; }
+    .metric-card .m-change { font-size:.78rem; font-weight:600; display:flex; align-items:center; gap:3px; margin-top:8px; }
+    .metric-card .m-icon { width:44px; height:44px; border-radius:11px; display:grid; place-items:center; font-size:1.2rem; flex-shrink:0; }
+
+    .section-header { display:flex; align-items:center; gap:.6rem; margin-bottom:1.25rem; }
+    .section-header .dot { width:4px; height:28px; background:var(--blue); border-radius:4px; }
+    .section-header h3 { font-family:'DM Serif Display',serif; font-size:1.25rem; color:var(--text); margin:0; }
+
+    .card-custom { background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:0 1px 4px rgba(0,0,0,.04); overflow:hidden; }
+    .card-head { padding:1rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; }
+    .card-head h5 { font-weight:600; font-size:.95rem; margin:0; color:var(--text); display:flex; align-items:center; gap:.5rem; }
+
+    .table-custom { width:100%; border-collapse:collapse; }
+    .table-custom thead th { background:var(--light-bg); font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); padding:.7rem 1rem; border-bottom:1.5px solid var(--border); white-space:nowrap; }
+    .table-custom tbody tr { border-bottom:1px solid #eef0f6; transition:background .12s; }
+    .table-custom tbody tr:hover { background:#f8f9fd; }
+    .table-custom td { padding:.75rem 1rem; font-size:.875rem; vertical-align:middle; }
+    .ticket-id { font-family:monospace; font-size:.85rem; color:var(--blue); font-weight:600; }
+    .eng-id    { font-family:monospace; font-size:.82rem; color:var(--navy-mid); }
+
+    .badge-status { padding:.28em .75em; border-radius:999px; font-size:.73rem; font-weight:600; letter-spacing:.02em; white-space:nowrap; }
+    .s-open       { background:#fff3cd; color:#8a6000; }
+    .s-assigned   { background:#cfe2ff; color:#0a3b80; }
+    .s-inprogress { background:#e0cffc; color:#4a1d96; }
+    .s-resolved   { background:#d1e7dd; color:#0a4e2d; }
+    .s-closed     { background:#e2e3e5; color:#41464b; }
+
+    .btn-sm-close  { background:#fff0f0; border:1px solid #fcc; color:#c0392b; font-size:.78rem; font-weight:600; padding:.3rem .7rem; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:background .15s; }
+    .btn-sm-close:hover { background:#fdd; }
+    .btn-sm-close:disabled { opacity:.4; cursor:not-allowed; }
+    .btn-sm-assign { background:#f0f4ff; border:1px solid #c7d4f5; color:var(--blue); font-size:.78rem; font-weight:600; padding:.3rem .7rem; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:background .15s; }
+    .btn-sm-assign:hover { background:#dce7ff; }
+    .btn-sm-assign:disabled { opacity:.4; cursor:not-allowed; }
+
+    .filter-bar { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+    .filter-bar select, .filter-bar input { border:1.5px solid var(--border); border-radius:7px; padding:.38rem .75rem; font-family:'DM Sans',sans-serif; font-size:.83rem; color:var(--text); background:#fff; }
+    .filter-bar select:focus, .filter-bar input:focus { outline:none; border-color:var(--blue); }
+
+    .load-bar-wrap { display:flex; align-items:center; gap:.5rem; }
+    .load-bar { height:6px; border-radius:99px; background:#e9ecef; flex:1; min-width:60px; overflow:hidden; }
+    .load-bar-fill { height:100%; border-radius:99px; transition:width .4s ease; }
+
+    .empty-state { text-align:center; padding:3rem 1rem; color:var(--muted); }
+    .empty-state i { font-size:2.5rem; opacity:.3; display:block; margin-bottom:.75rem; }
+
+    .toast-wrap { position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999; }
+
+    .sidebar-toggle { display:none; border:none; background:none; font-size:1.4rem; color:var(--text); cursor:pointer; }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:99; }
+    .sidebar-overlay.show { display:block; }
+
+    @media (max-width:991px) {
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.open { transform:translateX(0); }
+      .main-wrap { margin-left:0; }
+      .sidebar-toggle { display:inline-block; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="bi bi-headset"></i></div>
+    <div>
+      <div class="brand-name">HelpDesk</div>
+      <div class="brand-sub">Admin Panel</div>
+    </div>
+  </div>
+  <div class="admin-badge-wrap">
+    <div class="admin-avatar" id="admin-avatar-initials">AD</div>
+    <div class="admin-info">
+      <div class="aname" id="admin-display-name">Administrator</div>
+      <div class="arole">Super Admin</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Dashboard</div>
+    <div class="nav-item">
+      <a class="nav-link-item active" onclick="showSection('overview')">
+        <i class="bi bi-grid-1x2"></i> Overview
+      </a>
+    </div>
+    <div class="nav-label mt-2">Tickets</div>
+    <div class="nav-item">
+      <a class="nav-link-item" onclick="showSection('all-tickets')">
+        <i class="bi bi-ticket-detailed"></i> All Tickets
+      </a>
+    </div>
+    <div class="nav-label mt-2">Engineers</div>
+    <div class="nav-item">
+      <a class="nav-link-item" onclick="showSection('engineers')">
+        <i class="bi bi-people"></i> Workloads
+      </a>
+    </div>
+    <!-- ADDED ACCOUNT SECTION -->
+    <div class="nav-label mt-2">Account</div>
+    <div class="nav-item">
+      <a class="nav-link-item" onclick="showSection('profile')">
+        <i class="bi bi-person-circle"></i> Profile
+      </a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <a class="nav-link-item" href="#" onclick="doLogout(event)">
+      <i class="bi bi-box-arrow-left"></i> Logout
+    </a>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="d-flex align-items-center gap-3">
+      <button class="sidebar-toggle" onclick="openSidebar()"><i class="bi bi-list"></i></button>
+      <span class="topbar-title" id="topbar-title">Overview</span>
+    </div>
+    <div class="topbar-actions">
+      <span class="admin-tag"><i class="bi bi-shield-fill"></i> ADMIN</span>
+      <div class="topbar-btn" title="Refresh data" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i></div>
+      <div class="topbar-btn" title="Notifications"><i class="bi bi-bell"></i></div>
+    </div>
+  </header>
+
+  <div class="main-content">
+
+    <!-- ╔═ OVERVIEW ═╗ -->
+    <section id="section-overview">
+      <div class="section-header mb-4"><div class="dot"></div><h3>System Overview</h3></div>
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+          <div class="metric-card">
+            <div>
+              <div class="m-val" id="m-total">–</div>
+              <div class="m-label">Total Tickets</div>
+              <div class="m-change text-success"><i class="bi bi-arrow-up-short"></i> All time</div>
+            </div>
+            <div class="m-icon" style="background:#e8f0fe"><i class="bi bi-ticket-detailed" style="color:var(--blue)"></i></div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="metric-card">
+            <div>
+              <div class="m-val" id="m-active">–</div>
+              <div class="m-label">Active Tickets</div>
+              <div class="m-change text-warning"><i class="bi bi-circle-fill" style="font-size:7px"></i> Needs attention</div>
+            </div>
+            <div class="m-icon" style="background:#fff8e1"><i class="bi bi-clock-history" style="color:#e8a020"></i></div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="metric-card">
+            <div>
+              <div class="m-val" id="m-resolved">–</div>
+              <div class="m-label">Resolved / Closed</div>
+              <div class="m-change text-success"><i class="bi bi-check-all"></i> Done</div>
+            </div>
+            <div class="m-icon" style="background:#e8f5e9"><i class="bi bi-check-circle" style="color:#2e7d32"></i></div>
+          </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+          <div class="metric-card">
+            <div>
+              <div class="m-val" id="m-engineers">–</div>
+              <div class="m-label">Active Engineers</div>
+              <div class="m-change text-primary"><i class="bi bi-people"></i> On duty</div>
+            </div>
+            <div class="m-icon" style="background:#f3e5f5"><i class="bi bi-person-badge" style="color:#7b1fa2"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-4">
+        <div class="col-12">
+          <div class="section-header"><div class="dot"></div><h3>Resolution Trends</h3></div>
+          <div class="card-custom">
+            <div class="card-head"><h5><i class="bi bi-graph-up text-primary"></i> Last 7 Days Performance</h5></div>
+            <div class="card-body" style="padding:1.5rem; height: 320px; position: relative;">
+              <canvas id="resolutionChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <div class="section-header"><div class="dot"></div><h3>Tickets by Category</h3></div>
+          <div class="card-custom">
+            <div class="card-head"><h5><i class="bi bi-bar-chart text-primary"></i> Category Breakdown</h5></div>
+            <div id="category-breakdown" style="padding:1rem 1.5rem">
+              <div class="empty-state"><i class="bi bi-hourglass"></i>Loading…</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="section-header"><div class="dot"></div><h3>Tickets by Status</h3></div>
+          <div class="card-custom">
+            <div class="card-head"><h5><i class="bi bi-pie-chart text-primary"></i> Status Breakdown</h5></div>
+            <div id="status-breakdown" style="padding:1rem 1.5rem">
+              <div class="empty-state"><i class="bi bi-hourglass"></i>Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ╔═ ALL TICKETS ═╗ -->
+    <section id="section-all-tickets" style="display:none">
+      <div class="section-header"><div class="dot"></div><h3>All Tickets</h3></div>
+      <div class="card-custom">
+        <div class="card-head">
+          <h5><i class="bi bi-list-task text-primary"></i> Ticket Registry</h5>
+          <div class="filter-bar">
+            <select id="filter-status" onchange="applyFilters()">
+              <option value="">All Statuses</option>
+              <option>Open</option><option>Assigned</option>
+              <option>In Progress</option><option>Resolved</option><option>Closed</option>
+            </select>
+            <select id="filter-type" onchange="applyFilters()">
+              <option value="">All Categories</option>
+              <option>WiFi</option><option>Network</option><option>Hardware</option>
+              <option>Software</option><option>Furniture</option><option>Other</option>
+            </select>
+            <input type="text" id="filter-search" placeholder="Search…" oninput="applyFilters()" style="width:140px"/>
+          </div>
+        </div>
+        <div id="all-tickets-loading" style="padding:2rem;text-align:center;color:var(--muted)">
+          <span class="spinner-border spinner-border-sm me-2"></span>Loading tickets…
+        </div>
+        <div class="table-responsive" id="all-tickets-wrap" style="display:none">
+          <table class="table-custom">
+            <thead>
+            <tr>
+              <th>ID</th><th>User</th><th>Category</th><th>Status</th><th>Priority</th>
+              <th>Engineer</th><th>Description</th><th>Date</th><th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="all-tickets-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ╔═ ENGINEERS ═╗ -->
+    <section id="section-engineers" style="display:none">
+      <div class="section-header"><div class="dot"></div><h3>Engineer Workloads</h3></div>
+      <div class="card-custom">
+        <div class="card-head">
+          <h5><i class="bi bi-people text-primary"></i> Team Overview</h5>
+          <span class="badge rounded-pill" style="background:#e8f0fe;color:var(--blue);font-weight:600" id="eng-count-badge">–</span>
+        </div>
+        <div id="engineers-loading" style="padding:2rem;text-align:center;color:var(--muted)">
+          <span class="spinner-border spinner-border-sm me-2"></span>Loading engineers…
+        </div>
+        <div class="table-responsive" id="engineers-wrap" style="display:none">
+          <table class="table-custom">
+            <thead>
+            <tr><th>ID</th><th>Name</th><th>Specialty</th><th>Active</th><th>Load</th><th>Total Resolved</th></tr>
+            </thead>
+            <tbody id="engineers-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ╔═ PROFILE ═╗ -->
+    <section id="section-profile" style="display:none">
+      <div class="section-header"><div class="dot"></div><h3>Admin Profile</h3></div>
+      <div class="card-custom" style="max-width:620px">
+        <div class="card-head">
+          <h5><i class="bi bi-person-badge text-primary"></i> Administrator Details</h5>
+        </div>
+        <div class="card-body-inner">
+          <div class="mb-3">
+            <label class="form-label">Full Name</label>
+            <div class="form-control" id="prof-fullname" style="background:#f8f9fd; cursor:not-allowed"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <div class="form-control" id="prof-username" style="background:#f8f9fd; cursor:not-allowed"></div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Role</label>
+            <div class="form-control" id="prof-role" style="background:#f8f9fd; cursor:not-allowed"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="toast-wrap">
+  <div id="app-toast" class="toast align-items-center border-0" role="alert" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toast-msg">Done!</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // ── Session guard ────────────────────────────────────────────────
+  if (sessionStorage.getItem('role') !== 'admin') {
+    window.location.href = '/';
+  }
+
+  const adminName = sessionStorage.getItem('full_name') || 'Administrator';
+  document.getElementById('admin-display-name').textContent = adminName;
+  document.getElementById('admin-avatar-initials').textContent =
+          adminName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+  // Populate Profile
+  document.getElementById('prof-fullname').textContent = adminName;
+  document.getElementById('prof-username').textContent = sessionStorage.getItem('username');
+  document.getElementById('prof-role').textContent = 'Super Admin';
+
+  // ── Data stores ──────────────────────────────────────────────────
+  let allTickets  = [];
+  let allEngineers = [];
+  let resChart    = null;
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  // ── Helpers ──────────────────────────────────────────────────────
+  const statusClass = { 'Open':'s-open','Assigned':'s-assigned','In Progress':'s-inprogress','Resolved':'s-resolved','Closed':'s-closed' };
+  function statusBadge(s) { return `<span class="badge-status ${statusClass[s]||'s-open'}">${s}</span>`; }
+  function fmtDate(iso)   { return iso ? iso.split('T')[0] : '—'; }
+  function getEngName(id) { const e = allEngineers.find(e => e.id === id); return e ? e.name : null; }
+
+  // ── Fetch all tickets ────────────────────────────────────────────
+  async function loadAllTickets() {
+    document.getElementById('all-tickets-loading').style.display = 'block';
+    document.getElementById('all-tickets-wrap').style.display    = 'none';
+    try {
+      const res  = await fetch('/api/tickets');
+      const data = await res.json();
+      if (data.success) {
+        allTickets = data.tickets || [];
+        renderAllTickets();
+        updateMetrics();
+        renderBreakdown();
+        renderResolutionChart();
+      } else {
+        showToast(data.error || 'Failed to load tickets.', 'danger');
+      }
+    } catch (err) {
+      showToast('Network error loading tickets. Check console.', 'danger');
+      console.error(err);
+    } finally {
+      document.getElementById('all-tickets-loading').style.display = 'none';
+      document.getElementById('all-tickets-wrap').style.display    = '';
+    }
+  }
+
+  // ── Fetch engineers ───────────────────────────────────────────────
+  async function loadEngineers() {
+    document.getElementById('engineers-loading').style.display = 'block';
+    document.getElementById('engineers-wrap').style.display    = 'none';
+    try {
+      const res  = await fetch('/api/engineers');
+      const data = await res.json();
+      if (data.success) {
+        allEngineers = data.engineers || [];
+        renderEngineers();
+        document.getElementById('m-engineers').textContent = allEngineers.length;
+      } else {
+        showToast(data.error || 'Failed to load engineers.', 'danger');
+      }
+    } catch (err) {
+      showToast('Network error loading engineers. Check console.', 'danger');
+      console.error(err);
+    } finally {
+      document.getElementById('engineers-loading').style.display = 'none';
+      document.getElementById('engineers-wrap').style.display    = '';
+    }
+  }
+
+  async function refreshAll() {
+    await Promise.all([loadAllTickets(), loadEngineers()]);
+    showToast('Data refreshed.', 'success');
+  }
+
+  // ── Metrics ───────────────────────────────────────────────────────
+  function updateMetrics() {
+    const active   = allTickets.filter(t => !['Resolved','Closed'].includes(t.status)).length;
+    const resolved = allTickets.filter(t =>  ['Resolved','Closed'].includes(t.status)).length;
+    document.getElementById('m-total').textContent    = allTickets.length;
+    document.getElementById('m-active').textContent   = active;
+    document.getElementById('m-resolved').textContent = resolved;
+    // engineers count updated separately
+  }
+
+  // ── Breakdown bars ────────────────────────────────────────────────
+  function renderBreakdown() {
+    if (!allTickets.length) return;
+
+    const catCounts = {};
+    allTickets.forEach(t => { catCounts[t.issue_type] = (catCounts[t.issue_type]||0)+1; });
+    const catColors = { WiFi:'#1e4db7', Network:'#163580', Hardware:'#e8a020', Software:'#7b1fa2', Furniture:'#2e7d32', Other:'#0097a7' };
+    document.getElementById('category-breakdown').innerHTML = Object.entries(catCounts).map(([k,v]) => `
+      <div style="margin-bottom:.6rem">
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px">
+          <span style="font-weight:600">${k}</span><span style="color:var(--muted)">${v}</span>
+        </div>
+        <div style="height:7px;background:#eef0f6;border-radius:9px;overflow:hidden">
+          <div style="height:100%;width:${Math.round(v/allTickets.length*100)}%;background:${catColors[k]||'#888'};border-radius:9px"></div>
+        </div>
+      </div>`).join('');
+
+    const stCounts = {};
+    allTickets.forEach(t => { stCounts[t.status] = (stCounts[t.status]||0)+1; });
+    const stColors = { Open:'#e8a020', Assigned:'#1e4db7', 'In Progress':'#7b1fa2', Resolved:'#2e7d32', Closed:'#6b7a99' };
+    document.getElementById('status-breakdown').innerHTML = Object.entries(stCounts).map(([k,v]) => `
+      <div style="margin-bottom:.6rem">
+        <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px">
+          <span style="font-weight:600">${k}</span><span style="color:var(--muted)">${v}</span>
+        </div>
+        <div style="height:7px;background:#eef0f6;border-radius:9px;overflow:hidden">
+          <div style="height:100%;width:${Math.round(v/allTickets.length*100)}%;background:${stColors[k]||'#888'};border-radius:9px"></div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ── Resolution Chart ──────────────────────────────────────────────
+  async function renderResolutionChart() {
+    try {
+      const res = await fetch('/api/analytics/resolutions');
+      const data = await res.json();
+      if (!data.success) return;
+
+      const ctx = document.getElementById('resolutionChart').getContext('2d');
+      if (resChart) resChart.destroy();
+
+      resChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.labels,
+          datasets: [{
+            label: 'Tickets Resolved',
+            data: data.data,
+            borderColor: '#1e4db7',
+            backgroundColor: 'rgba(30, 77, 183, 0.1)',
+            borderWidth: 3,
+            pointBackgroundColor: '#1e4db7',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    } catch (err) {
+      console.error('Chart Error:', err);
+    }
+  }
+
+    // ── Render all-tickets table ──────────────────────────────────────
+    function applyFilters() { renderAllTickets(); }
+
+    function renderAllTickets() {
+      const fStatus = document.getElementById('filter-status').value;
+      const fType   = document.getElementById('filter-type').value;
+      const fSearch = document.getElementById('filter-search').value.toLowerCase();
+
+      const filtered = allTickets.filter(t => {
+        if (fStatus && t.status     !== fStatus) return false;
+        if (fType   && t.issue_type !== fType)   return false;
+        if (fSearch && !String(t.id).includes(fSearch)
+                && !t.description.toLowerCase().includes(fSearch)
+                && !String(t.engineer_id||'').includes(fSearch)) return false;
+        return true;
+      });
+
+      const tbody = document.getElementById('all-tickets-tbody');
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="bi bi-search"></i>No tickets match the filters.</div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = filtered.map(t => {
+        const engName = getEngName(t.engineer_id);
+        const engCell = t.engineer_id
+                ? `<span class="eng-id">ENG-${t.engineer_id}</span>${engName ? `<div style="font-size:.73rem;color:var(--muted)">${engName}</div>` : ''}`
+                : `<span style="color:var(--muted);font-size:.8rem;font-style:italic">Unassigned</span>`;
+        const isClosed = t.status === 'Closed';
+        const isDone   = ['Resolved','Closed'].includes(t.status);
+        const prioBadge = t.priority && t.priority > 0 
+                ? `<span style="font-weight:700;color:var(--blue);font-size:.85rem">P${t.priority}</span>` 
+                : `<span style="font-style:italic;color:var(--muted);font-size:.8rem">Unassigned</span>`;
+        const imgLink = t.image_path && t.image_path !== 'null'
+                ? `<div class="mt-1"><a href="/${t.image_path}" target="_blank" class="text-decoration-none x-small" style="font-size: 0.7rem;"><i class="bi bi-image"></i> Image</a></div>`
+                : '';
+        return `
+        <tr id="row-${t.id}">
+          <td><span class="ticket-id">#${t.id}</span></td>
+          <td style="font-size:.82rem;color:var(--muted)">${t.user_id}</td>
+          <td><span style="font-size:.82rem">${t.issue_type}</span></td>
+          <td>${statusBadge(t.status)}</td>
+          <td>${prioBadge}</td>
+          <td>${engCell}</td>
+          <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.82rem" title="${t.description}">${t.description}${imgLink}</td>
+          <td style="color:var(--muted);font-size:.8rem;white-space:nowrap">${fmtDate(t.created_at)}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:nowrap">
+              <button class="btn-sm-assign" onclick="doAssign(${t.id})" ${isDone?'disabled':''}>
+                <i class="bi bi-person-plus"></i> Assign
+              </button>
+              <button class="btn-sm-close" onclick="doClose(${t.id})" ${isClosed?'disabled':''}>
+                <i class="bi bi-x-circle"></i> Close
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Close ticket via API ──────────────────────────────────────────
+    async function doClose(ticketId) {
+      try {
+        const res  = await fetch('/api/close_ticket', {
+          method:  'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body:    JSON.stringify({ ticket_id: ticketId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const t = allTickets.find(x => x.id === ticketId);
+          if (t) { t.status = 'Closed'; t.closed_at = data.ticket?.closed_at || null; }
+          renderAllTickets();
+          updateMetrics();
+          renderBreakdown();
+          renderResolutionChart();
+          showToast(`Ticket #${ticketId} closed.`, 'success');
+        } else {
+          showToast(data.error || 'Failed to close ticket.', 'danger');
+        }
+      } catch (err) {
+        showToast('Network error.', 'danger');
+      }
+    }
+
+    // ── Assign ticket via API ─────────────────────────────────────────
+    async function doAssign(ticketId) {
+      try {
+        const res  = await fetch('/api/assign_ticket', {
+          method:  'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body:    JSON.stringify({ ticket_id: ticketId })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const updated = data.ticket;
+          const idx = allTickets.findIndex(x => x.id === ticketId);
+          if (idx >= 0) allTickets[idx] = { ...allTickets[idx], ...updated };
+          // Reload engineers too (their loads changed)
+          await loadEngineers();
+          renderAllTickets();
+          updateMetrics();
+          showToast(`Ticket #${ticketId} reassigned to engineer ${updated.engineer_id}.`, 'success');
+        } else {
+          showToast(data.error || 'Failed to assign ticket.', 'danger');
+        }
+      } catch (err) {
+        showToast('Network error.', 'danger');
+      }
+    }
+
+    // ── Render engineers table ────────────────────────────────────────
+    const OVERLOAD = 5;
+
+    function renderEngineers() {
+      document.getElementById('eng-count-badge').textContent = `${allEngineers.length} engineers`;
+      const tbody = document.getElementById('engineers-tbody');
+      if (!allEngineers.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="bi bi-people"></i>No engineers found.</div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = allEngineers.map(e => {
+        const overloaded = e.active_tickets >= OVERLOAD;
+        const pct        = Math.min(Math.round(e.active_tickets / OVERLOAD * 100), 100);
+        const barColor   = overloaded ? '#dc3545' : pct > 60 ? '#e8a020' : '#2e7d32';
+        const initials   = e.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        return `
+        <tr>
+          <td><span class="eng-id">ENG-${e.id}</span></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:.5rem">
+              <div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--blue),#4a90e2);display:grid;place-items:center;color:#fff;font-weight:700;font-size:.72rem;flex-shrink:0">${initials}</div>
+              <span style="font-weight:500">${e.name}</span>
+            </div>
+          </td>
+          <td><span style="font-size:.82rem;color:var(--muted)">${e.specialty}</span></td>
+          <td>
+            <span style="font-weight:700;font-size:.95rem;${overloaded?'color:#dc3545':''}">
+              ${e.active_tickets}${overloaded ? ' <i class="bi bi-exclamation-triangle-fill" style="font-size:.8rem"></i>' : ''}
+            </span>
+          </td>
+          <td style="min-width:120px">
+            <div class="load-bar-wrap">
+              <div class="load-bar"><div class="load-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+              <span style="font-size:.75rem;color:var(--muted);white-space:nowrap">${pct}%</span>
+            </div>
+          </td>
+          <td><span style="font-weight:600;color:var(--navy-mid)">${e.total_resolved}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ── Section navigation ────────────────────────────────────────────
+    const sectionMap = { overview:'section-overview', 'all-tickets':'section-all-tickets', engineers:'section-engineers', profile:'section-profile' };
+    const titleMap   = { overview:'Overview', 'all-tickets':'All Tickets', engineers:'Engineer Workloads', profile:'Admin Profile' };
+
+    function showSection(key) {
+      Object.keys(sectionMap).forEach(k => {
+        document.getElementById(sectionMap[k]).style.display = (k === key) ? '' : 'none';
+      });
+
+      // Dynamically match the onclick attribute so the active state follows the click
+      document.querySelectorAll('.nav-link-item').forEach((el) => {
+        el.classList.remove('active');
+        if (el.getAttribute('onclick') === `showSection('${key}')`) {
+          el.classList.add('active');
+        }
+      });
+
+      document.getElementById('topbar-title').textContent = titleMap[key];
+      if (key === 'all-tickets') loadAllTickets();
+      if (key === 'engineers')   loadEngineers();
+      closeSidebar();
+    }
+
+    // ── Toast ─────────────────────────────────────────────────────────
+    function showToast(msg, type) {
+      const el = document.getElementById('app-toast');
+      document.getElementById('toast-msg').textContent = msg;
+      el.className = `toast align-items-center border-0 text-bg-${type === 'success' ? 'success' : 'danger'}`;
+      new bootstrap.Toast(el, { delay: 3500 }).show();
+    }
+
+    // ── Logout ────────────────────────────────────────────────────────
+    async function doLogout(e) {
+      e.preventDefault();
+      await fetch('/api/logout', { 
+        method:'POST',
+        headers: {
+          'X-CSRFToken': csrfToken
+        }
+      });
+      sessionStorage.clear();
+      window.location.href = '/';
+    }
+
+    // ── Sidebar mobile ────────────────────────────────────────────────
+    function openSidebar()  { document.getElementById('sidebar').classList.add('open');    document.getElementById('sidebar-overlay').classList.add('show');    }
+    function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('show'); }
+
+    // ── Init: load overview data immediately ──────────────────────────
+    (async () => {
+      await Promise.all([loadAllTickets(), loadEngineers()]);
+    })();
+</script>
+</body>
+</html>

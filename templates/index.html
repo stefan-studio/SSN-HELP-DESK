@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>HelpDesk — SSN Institutions</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --navy:     #0d2148;
+      --navy-mid: #163580;
+      --blue:     #1e4db7;
+      --accent:   #e8a020;
+      --light-bg: #f4f6fb;
+      --border:   #d6dde8;
+      --text:     #1a2340;
+      --muted:    #6b7a99;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--light-bg); min-height: 100vh; display: flex; flex-direction: column; }
+
+    .hero-panel {
+      background: linear-gradient(160deg, var(--navy) 0%, var(--navy-mid) 55%, var(--blue) 100%);
+      position: relative; overflow: hidden;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 3rem 3.5rem; min-height: 100vh;
+    }
+    .hero-panel::before { content:''; position:absolute; width:480px; height:480px; border-radius:50%; background:rgba(255,255,255,0.04); top:-120px; left:-120px; }
+    .hero-panel::after  { content:''; position:absolute; width:320px; height:320px; border-radius:50%; background:rgba(255,255,255,0.05); bottom:40px; right:-80px; }
+
+    .hero-logo { display:flex; align-items:center; gap:.75rem; margin-bottom:3rem; position:relative; z-index:1; }
+    .hero-logo .logo-icon { width:48px; height:48px; background:var(--accent); border-radius:12px; display:grid; place-items:center; font-size:1.5rem; color:#fff; }
+    .hero-logo .logo-text { font-family:'DM Serif Display',serif; font-size:1.45rem; color:#fff; line-height:1.2; }
+    .hero-logo .logo-text span { display:block; font-size:.75rem; font-family:'DM Sans',sans-serif; color:rgba(255,255,255,.6); letter-spacing:.06em; text-transform:uppercase; }
+    .hero-heading { font-family:'DM Serif Display',serif; font-size:clamp(2rem,3.5vw,3rem); color:#fff; line-height:1.25; margin-bottom:1.25rem; position:relative; z-index:1; }
+    .hero-heading em { color:var(--accent); font-style:normal; }
+    .hero-sub { color:rgba(255,255,255,.72); font-size:1.05rem; font-weight:300; max-width:400px; line-height:1.7; margin-bottom:2.5rem; position:relative; z-index:1; }
+    .hero-chips { display:flex; flex-wrap:wrap; gap:.6rem; position:relative; z-index:1; }
+    .hero-chip { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); color:rgba(255,255,255,.85); font-size:.8rem; padding:.35rem .9rem; border-radius:999px; display:flex; align-items:center; gap:.4rem; }
+    .hero-chip i { color:var(--accent); }
+
+    .form-panel { background:#fff; display:flex; align-items:center; justify-content:center; padding:3rem 2.5rem; min-height:100vh; }
+    .login-card { width:100%; max-width:420px; }
+    .login-card h2 { font-family:'DM Serif Display',serif; font-size:1.8rem; color:var(--text); margin-bottom:.35rem; }
+    .login-card p.sub { color:var(--muted); font-size:.9rem; margin-bottom:1.75rem; }
+
+    .pill-toggle { display:flex; background:var(--light-bg); border:1px solid var(--border); border-radius:10px; padding:4px; margin-bottom:1.75rem; gap:4px; }
+    .pill-toggle button { flex:1; border:none; background:transparent; padding:.55rem .5rem; font-family:'DM Sans',sans-serif; font-size:.875rem; font-weight:500; color:var(--muted); border-radius:7px; cursor:pointer; transition:all .2s ease; display:flex; align-items:center; justify-content:center; gap:.4rem; }
+    .pill-toggle button.active { background:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(30,77,183,.35); }
+
+    .form-label { font-size:.82rem; font-weight:600; color:var(--text); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.4rem; }
+    .form-control { border:1.5px solid var(--border); border-radius:8px; padding:.65rem .9rem; font-family:'DM Sans',sans-serif; font-size:.95rem; color:var(--text); transition:border-color .2s,box-shadow .2s; }
+    .form-control:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(30,77,183,.12); }
+    .input-group-text { background:var(--light-bg); border:1.5px solid var(--border); border-right:none; color:var(--muted); border-radius:8px 0 0 8px; }
+    .input-group .form-control { border-left:none; border-radius:0 8px 8px 0; }
+
+    .btn-login { background:linear-gradient(135deg,var(--blue),var(--navy-mid)); border:none; color:#fff; font-family:'DM Sans',sans-serif; font-weight:600; font-size:.95rem; padding:.75rem; border-radius:8px; width:100%; letter-spacing:.02em; transition:opacity .2s,transform .15s; display:flex; align-items:center; justify-content:center; gap:.5rem; cursor:pointer; }
+    .btn-login:hover { opacity:.9; transform:translateY(-1px); }
+    .btn-login:disabled { opacity:.65; cursor:not-allowed; transform:none; }
+
+    .error-banner { background:#fff0f0; border:1px solid #fcc; border-radius:8px; padding:.7rem 1rem; font-size:.85rem; color:#c0392b; margin-bottom:1rem; display:none; }
+    .error-banner.show { display:block; }
+
+    .demo-credential { cursor:pointer; text-decoration:underline dotted; color:var(--blue); transition:color 0.2s; }
+    .demo-credential:hover { color:var(--navy-mid); }
+
+    .footer-note { text-align:center; font-size:.78rem; color:var(--muted); margin-top:2rem; }
+
+    @media (max-width:767px) {
+      .hero-panel { min-height:auto; padding:2.5rem 1.75rem; }
+      .form-panel { min-height:auto; padding:2rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="container-fluid p-0">
+  <div class="row g-0">
+
+    <!-- LEFT: Hero -->
+    <div class="col-lg-6 hero-panel">
+      <div class="hero-logo">
+        <div class="logo-icon"><i class="bi bi-headset"></i></div>
+        <div class="logo-text">HelpDesk<span>SSN Institutions</span></div>
+      </div>
+      <h1 class="hero-heading">Smart Support for<br/><em>Every Campus Need</em></h1>
+      <p class="hero-sub">Log, track, and resolve infrastructure and technical issues seamlessly — from network outages to broken furniture, we've got it covered.</p>
+      <div class="hero-chips">
+        <span class="hero-chip"><i class="bi bi-wifi"></i> WiFi &amp; Network</span>
+        <span class="hero-chip"><i class="bi bi-pc-display"></i> Hardware</span>
+        <span class="hero-chip"><i class="bi bi-code-slash"></i> Software</span>
+        <span class="hero-chip"><i class="bi bi-house-door"></i> Furniture</span>
+        <span class="hero-chip"><i class="bi bi-three-dots"></i> Other Issues</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: Login -->
+    <div class="col-lg-6 form-panel">
+      <div class="login-card">
+        <div class="pill-toggle mb-3">
+          <button class="active" id="tab-login" onclick="setAuthMode('login')">Sign In</button>
+          <button id="tab-signup" onclick="setAuthMode('signup')">Create Account</button>
+        </div>
+
+        <h2 id="card-title">Welcome Back</h2>
+        <p class="sub" id="card-sub">Sign in to your account to continue.</p>
+
+        <div class="pill-toggle">
+          <button class="active" id="btn-user" onclick="setRole('user')">
+            <i class="bi bi-person"></i> User
+          </button>
+          <button id="btn-middleman" onclick="setRole('middleman')">
+            <i class="bi bi-bezier2"></i> Dispatcher
+          </button>
+          <button id="btn-engineer" onclick="setRole('engineer')">
+            <i class="bi bi-tools"></i> Engineer
+          </button>
+          <button id="btn-admin" onclick="setRole('admin')">
+            <i class="bi bi-shield-lock"></i> Admin
+          </button>
+        </div>
+
+        <div class="error-banner" id="error-banner"></div>
+
+        <form id="auth-form" novalidate onsubmit="handleAuth(event)">
+          <div class="mb-3" id="fullname-group" style="display:none">
+            <label class="form-label">Full Name</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
+              <input type="text" class="form-control" id="fullname" placeholder="John Doe" autocomplete="name"/>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+              <input type="text" class="form-control" id="username" placeholder="Enter username" required autocomplete="username"/>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+              <input type="password" class="form-control" id="password" placeholder="••••••••" required autocomplete="current-password"/>
+            </div>
+          </div>
+          <div class="mb-4 d-flex justify-content-between align-items-center" id="remember-group">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-check m-0">
+              <input class="form-check-input" type="checkbox" id="rememberMe"/>
+              <label class="form-check-label" for="rememberMe" style="font-size:.85rem;color:var(--muted)">Remember me</label>
+            </div>
+            <a href="#" style="font-size:.85rem;color:var(--blue);text-decoration:none">Forgot password?</a>
+          </div>
+          <button type="submit" class="btn-login" id="btn-submit">
+            <i class="bi bi-box-arrow-in-right"></i> Sign In
+          </button>
+        </form>
+
+        <div class="mt-4 p-3 rounded" style="background: var(--light-bg); border: 1px dashed var(--border); font-size: 0.8rem;">
+          <div class="fw-bold text-muted text-uppercase mb-2" style="font-size: 0.7rem; letter-spacing: 0.05em;">Quick Login (Click to Auto-fill)</div>
+          <div class="row g-2">
+            <div class="col-6">
+              <span class="demo-credential" onclick="autoFill('user', 'pass', 'user')"><span style="font-weight:600; color:var(--navy);">User:</span> user / pass</span>
+            </div>
+            <div class="col-6">
+              <span class="demo-credential" onclick="autoFill('admin', 'pass', 'admin')"><span style="font-weight:600; color:var(--navy);">Admin:</span> admin / pass</span>
+            </div>
+            <div class="col-6">
+              <span class="demo-credential" onclick="autoFill('middleman', 'pass', 'middleman')"><span style="font-weight:600; color:var(--navy);">Dispatcher:</span> middleman / pass</span>
+            </div>
+            <div class="col-6">
+              <span class="demo-credential" onclick="autoFill('ravi', 'pass', 'engineer')"><span style="font-weight:600; color:var(--navy);">Engineer:</span> ravi / pass</span>
+            </div>
+          </div>
+        </div>
+
+        <p class="footer-note">
+          <i class="bi bi-shield-check text-success"></i>&nbsp;
+          Secured by SSN IT Services &nbsp;·&nbsp; v3.0 (Flask)
+        </p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  let currentRole = 'user';
+  let authMode = 'login';
+
+  function setRole(role) {
+    currentRole = role;
+    document.getElementById('btn-user').classList.toggle('active', role === 'user');
+    document.getElementById('btn-middleman').classList.toggle('active', role === 'middleman');
+    document.getElementById('btn-engineer').classList.toggle('active', role === 'engineer');
+    document.getElementById('btn-admin').classList.toggle('active', role === 'admin');
+    hideError();
+  }
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+    document.getElementById('tab-signup').classList.toggle('active', mode === 'signup');
+    
+    if (mode === 'signup') {
+        document.getElementById('card-title').textContent = 'Create Account';
+        document.getElementById('card-sub').textContent = 'Register a new account for the HelpDesk.';
+        document.getElementById('fullname-group').style.display = 'block';
+        document.getElementById('remember-group').style.display = 'none';
+        document.getElementById('btn-submit').innerHTML = '<i class="bi bi-person-plus"></i> Sign Up';
+        document.getElementById('fullname').required = true;
+    } else {
+        document.getElementById('card-title').textContent = 'Welcome Back';
+        document.getElementById('card-sub').textContent = 'Sign in to your account to continue.';
+        document.getElementById('fullname-group').style.display = 'none';
+        document.getElementById('remember-group').style.display = 'flex';
+        document.getElementById('btn-submit').innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Sign In';
+        document.getElementById('fullname').required = false;
+    }
+    hideError();
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-banner');
+    el.textContent = msg;
+    el.classList.add('show');
+  }
+
+  function hideError() {
+    document.getElementById('error-banner').classList.remove('show');
+  }
+
+  function autoFill(u, p, r) {
+    setAuthMode('login');
+    document.getElementById('username').value = u;
+    document.getElementById('password').value = p;
+    setRole(r);
+  }
+
+  async function handleAuth(e) {
+    e.preventDefault();
+    hideError();
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const fullname = document.getElementById('fullname').value.trim();
+    
+    if (!username || !password) { showError('Please enter username and password.'); return; }
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    if (authMode === 'signup' && !fullname) { showError('Please enter your full name.'); return; }
+
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Please wait…';
+
+    const url = authMode === 'signup' ? '/api/signup' : '/api/login';
+    const payload = { username, password, role: currentRole };
+    if (authMode === 'signup') payload.full_name = fullname;
+    
+    try {
+      const res  = await fetch(url, {
+        method:  'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body:    JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        sessionStorage.setItem('user_id',   data.user_id);
+        sessionStorage.setItem('username',  data.username);
+        sessionStorage.setItem('full_name', data.full_name || data.username);
+        sessionStorage.setItem('role',      data.role);
+        window.location.href = data.redirect;
+      } else {
+        showError(data.error || 'Operation failed. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = authMode === 'signup' ? '<i class="bi bi-person-plus"></i> Sign Up' : '<i class="bi bi-box-arrow-in-right"></i> Sign In';
+      }
+    } catch (err) {
+      showError('Cannot reach server. Is Flask running?');
+      btn.disabled = false;
+      btn.innerHTML = authMode === 'signup' ? '<i class="bi bi-person-plus"></i> Sign Up' : '<i class="bi bi-box-arrow-in-right"></i> Sign In';
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Middleman Portal — Priority Manager</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --navy:#0d2148; --navy-mid:#163580; --blue:#1e4db7; --accent:#e8a020; --light-bg:#f4f6fb; --border:#d6dde8; --text:#1a2340; --muted:#6b7a99; --sidebar-w:260px; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; background:var(--light-bg); color:var(--text); }
+
+    .sidebar { width:var(--sidebar-w); min-height:100vh; background:var(--navy); position:fixed; top:0; left:0; display:flex; flex-direction:column; z-index:100; transition:transform .3s ease; }
+    .sidebar-brand { padding:1.5rem 1.25rem; border-bottom:1px solid rgba(255,255,255,.1); display:flex; align-items:center; gap:.7rem; }
+    .brand-icon { width:38px; height:38px; background:var(--accent); border-radius:9px; display:grid; place-items:center; color:#fff; font-size:1.15rem; }
+    .brand-name { font-family:'DM Serif Display',serif; font-size:1.15rem; color:#fff; }
+    .brand-sub  { font-size:.7rem; color:rgba(255,255,255,.5); letter-spacing:.06em; text-transform:uppercase; }
+    .admin-badge-wrap { padding:.85rem 1.25rem; background:rgba(255,255,255,.05); border-bottom:1px solid rgba(255,255,255,.08); display:flex; align-items:center; gap:.7rem; }
+    .admin-avatar { width:36px; height:36px; background:linear-gradient(135deg,var(--accent),#f5c842); border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:700; font-size:.85rem; }
+    .admin-info .aname { font-size:.88rem; font-weight:600; color:#fff; }
+    .admin-info .arole { font-size:.7rem; color:var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:.06em; }
+    .sidebar-nav { flex:1; padding:1rem 0; }
+    .nav-label { font-size:.67rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:rgba(255,255,255,.3); padding:.5rem 1.25rem .25rem; }
+    .nav-item { padding:0 .75rem; margin-bottom:2px; }
+    .nav-link-item { display:flex; align-items:center; gap:.65rem; padding:.6rem .75rem; border-radius:8px; color:rgba(255,255,255,.65); font-size:.9rem; font-weight:500; cursor:pointer; text-decoration:none; transition:all .15s ease; }
+    .nav-link-item:hover { background:rgba(255,255,255,.08); color:#fff; }
+    .nav-link-item.active { background:var(--blue); color:#fff; box-shadow:0 2px 8px rgba(30,77,183,.4); }
+    .nav-link-item i { font-size:1rem; width:18px; text-align:center; }
+    .sidebar-footer { padding:1rem .75rem; border-top:1px solid rgba(255,255,255,.1); }
+
+    .main-wrap { margin-left:var(--sidebar-w); min-height:100vh; display:flex; flex-direction:column; }
+    .topbar { background:#fff; border-bottom:1px solid var(--border); padding:0 1.75rem; height:64px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:90; }
+    .topbar-title { font-family:'DM Serif Display',serif; font-size:1.3rem; color:var(--text); }
+    .topbar-actions { display:flex; align-items:center; gap:.75rem; }
+    .topbar-btn { width:38px; height:38px; border:1.5px solid var(--border); border-radius:8px; background:#fff; display:grid; place-items:center; color:var(--muted); cursor:pointer; transition:all .15s; }
+    .topbar-btn:hover { border-color:var(--blue); color:var(--blue); }
+    .admin-tag { background:rgba(232,160,32,.12); color:var(--accent); border:1px solid rgba(232,160,32,.3); border-radius:6px; font-size:.75rem; font-weight:700; padding:.25rem .6rem; letter-spacing:.05em; }
+
+    .main-content { padding:2rem 1.75rem; flex:1; }
+    .metric-card { background:#fff; border:1px solid var(--border); border-radius:14px; padding:1.25rem 1.4rem; display:flex; align-items:flex-start; justify-content:space-between; transition:box-shadow .15s; }
+    .metric-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.07); }
+    .metric-card .m-val { font-size:2rem; font-weight:700; color:var(--text); line-height:1; }
+    .metric-card .m-label { font-size:.8rem; color:var(--muted); margin-top:4px; }
+    .metric-card .m-change { font-size:.78rem; font-weight:600; display:flex; align-items:center; gap:3px; margin-top:8px; }
+    .metric-card .m-icon { width:44px; height:44px; border-radius:11px; display:grid; place-items:center; font-size:1.2rem; flex-shrink:0; }
+
+    .section-header { display:flex; align-items:center; gap:.6rem; margin-bottom:1.25rem; }
+    .section-header .dot { width:4px; height:28px; background:var(--blue); border-radius:4px; }
+    .section-header h3 { font-family:'DM Serif Display',serif; font-size:1.25rem; color:var(--text); margin:0; }
+
+    .card-custom { background:#fff; border:1px solid var(--border); border-radius:14px; box-shadow:0 1px 4px rgba(0,0,0,.04); overflow:hidden; }
+    .card-head { padding:1rem 1.5rem; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; }
+    .card-head h5 { font-weight:600; font-size:.95rem; margin:0; color:var(--text); display:flex; align-items:center; gap:.5rem; }
+
+    .table-custom { width:100%; border-collapse:collapse; }
+    .table-custom thead th { background:var(--light-bg); font-size:.73rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); padding:.7rem 1rem; border-bottom:1.5px solid var(--border); white-space:nowrap; }
+    .table-custom tbody tr { border-bottom:1px solid #eef0f6; transition:background .12s; }
+    .table-custom tbody tr:hover { background:#f8f9fd; }
+    .table-custom td { padding:.75rem 1rem; font-size:.875rem; vertical-align:middle; }
+    .ticket-id { font-family:monospace; font-size:.85rem; color:var(--blue); font-weight:600; }
+
+    .badge-status { padding:.28em .75em; border-radius:999px; font-size:.73rem; font-weight:600; letter-spacing:.02em; white-space:nowrap; }
+    .s-open       { background:#fff3cd; color:#8a6000; }
+    .s-assigned   { background:#cfe2ff; color:#0a3b80; }
+    .s-inprogress { background:#e0cffc; color:#4a1d96; }
+    .s-resolved   { background:#d1e7dd; color:#0a4e2d; }
+    .s-closed     { background:#e2e3e5; color:#41464b; }
+
+    .priority-select { background:#fff; border:1px solid var(--border); border-radius:6px; padding:.25rem .5rem; font-size:.8rem; font-weight:500; color:var(--text); outline:none; }
+    .priority-select:focus { border-color:var(--blue); }
+    
+    .btn-sm-set { background:#f0f4ff; border:1px solid #c7d4f5; color:var(--blue); font-size:.78rem; font-weight:600; padding:.3rem .7rem; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; transition:background .15s; }
+    .btn-sm-set:hover { background:#dce7ff; }
+    .btn-sm-set:disabled { opacity:.4; cursor:not-allowed; }
+
+    .filter-bar { display:flex; flex-wrap:wrap; gap:.5rem; align-items:center; }
+    .filter-bar select, .filter-bar input { border:1.5px solid var(--border); border-radius:7px; padding:.38rem .75rem; font-family:'DM Sans',sans-serif; font-size:.83rem; color:var(--text); background:#fff; }
+    .filter-bar select:focus, .filter-bar input:focus { outline:none; border-color:var(--blue); }
+
+    .empty-state { text-align:center; padding:3rem 1rem; color:var(--muted); }
+    .empty-state i { font-size:2.5rem; opacity:.3; display:block; margin-bottom:.75rem; }
+
+    .toast-wrap { position:fixed; bottom:1.5rem; right:1.5rem; z-index:9999; }
+
+    .sidebar-toggle { display:none; border:none; background:none; font-size:1.4rem; color:var(--text); cursor:pointer; }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:99; }
+    .sidebar-overlay.show { display:block; }
+
+    @media (max-width:991px) {
+      .sidebar { transform:translateX(-100%); }
+      .sidebar.open { transform:translateX(0); }
+      .main-wrap { margin-left:0; }
+      .sidebar-toggle { display:inline-block; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon"><i class="bi bi-bezier2"></i></div>
+    <div>
+      <div class="brand-name">HelpDesk</div>
+      <div class="brand-sub">Priority Control</div>
+    </div>
+  </div>
+  <div class="admin-badge-wrap">
+    <div class="admin-avatar" id="admin-avatar-initials">MM</div>
+    <div class="admin-info">
+      <div class="aname" id="admin-display-name">Middleman</div>
+      <div class="arole">Dispatcher</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Command Center</div>
+    <div class="nav-item">
+      <a class="nav-link-item active" onclick="showSection('overview')">
+        <i class="bi bi-cpu"></i> System Overview
+      </a>
+    </div>
+    <div class="nav-item">
+      <a class="nav-link-item" onclick="showSection('all-tickets')">
+        <i class="bi bi-kanban"></i> Priority Queue
+      </a>
+    </div>
+    <div class="nav-label mt-2">Settings</div>
+    <div class="nav-item">
+      <a class="nav-link-item" onclick="showSection('profile')">
+        <i class="bi bi-person-bounding-box"></i> Profile Details
+      </a>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <a class="nav-link-item" href="#" onclick="doLogout(event)">
+      <i class="bi bi-box-arrow-left"></i> Logout
+    </a>
+  </div>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="d-flex align-items-center gap-3">
+      <button class="sidebar-toggle" onclick="openSidebar()"><i class="bi bi-list"></i></button>
+      <span class="topbar-title" id="topbar-title">System Overview</span>
+    </div>
+    <div class="topbar-actions">
+      <span class="admin-tag"><i class="bi bi-bezier2"></i> DISPATCHER</span>
+      <div class="topbar-btn" title="Refresh data" onclick="refreshAll()"><i class="bi bi-arrow-clockwise"></i></div>
+      <div class="topbar-btn" title="Notifications"><i class="bi bi-bell"></i></div>
+    </div>
+  </header>
+
+  <div class="main-content">
+
+    <!-- ╔═ OVERVIEW ═╗ -->
+    <section id="section-overview">
+      <div class="section-header mb-4"><div class="dot"></div><h3>Metrics Snapshot</h3></div>
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <div class="metric-card">
+            <div>
+              <div class="m-val" id="m-total">0</div>
+              <div class="m-label">Global Tickets</div>
+            </div>
+            <div class="m-icon" style="background:#e8f0fe"><i class="bi bi-hdd-stack" style="color:var(--blue)"></i></div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="metric-card">
+            <div>
+              <div class="m-val" id="m-unassigned">0</div>
+              <div class="m-label">Unassigned Priority</div>
+            </div>
+            <div class="m-icon" style="background:#fff8e1"><i class="bi bi-exclamation-square" style="color:#e8a020"></i></div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="metric-card">
+            <div>
+              <div class="m-val" id="m-resolved">0</div>
+              <div class="m-label">Resolved / Closed</div>
+            </div>
+            <div class="m-icon" style="background:#e8f5e9"><i class="bi bi-check2-all" style="color:#2e7d32"></i></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ╔═ ALL TICKETS ═╗ -->
+    <section id="section-all-tickets" style="display:none">
+      <div class="section-header"><div class="dot"></div><h3>Priority Queue Management</h3></div>
+      <div class="card-custom">
+        <div class="card-head">
+          <h5><i class="bi bi-list-nested text-primary"></i> Ticket Dispatcher</h5>
+          <div class="filter-bar">
+            <input type="text" id="filter-search" placeholder="Search ID or text…" oninput="applyFilters()" style="width:140px"/>
+          </div>
+        </div>
+        <div id="all-tickets-loading" style="padding:2rem;text-align:center;color:var(--muted)">
+          <span class="spinner-border spinner-border-sm me-2"></span>Loading tickets…
+        </div>
+        <div class="table-responsive" id="all-tickets-wrap" style="display:none">
+          <table class="table-custom">
+            <thead>
+            <tr>
+              <th>ID</th>
+              <th>Category</th>
+              <th>Status</th>
+              <th>Description</th>
+              <th>Smart Analysis</th>
+              <th>Current Eng</th>
+              <th>Assign Specialized Engineer</th>
+              <th>Set Priority</th>
+            </tr>
+            </thead>
+            <tbody id="all-tickets-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ╔═ PROFILE ═╗ -->
+    <section id="section-profile" style="display:none">
+      <div class="section-header"><div class="dot"></div><h3>Operator Profile</h3></div>
+      <div class="card-custom" style="max-width:620px">
+        <div class="card-head">
+          <h5><i class="bi bi-person-badge text-primary"></i> Operator Details</h5>
+        </div>
+        <div style="padding:1.5rem">
+          <div class="mb-3">
+            <label style="font-size:0.8rem; font-weight:600; text-transform:uppercase; color:var(--text); margin-bottom:.35rem;">Full Name</label>
+            <div id="prof-fullname" style="background:#f8f9fd; border:1.5px solid var(--border); border-radius:8px; padding:.65rem .9rem; font-size:.92rem; color:var(--text); cursor:not-allowed;"></div>
+          </div>
+          <div class="mb-3">
+            <label style="font-size:0.8rem; font-weight:600; text-transform:uppercase; color:var(--text); margin-bottom:.35rem;">Username</label>
+            <div id="prof-username" style="background:#f8f9fd; border:1.5px solid var(--border); border-radius:8px; padding:.65rem .9rem; font-size:.92rem; color:var(--text); cursor:not-allowed;"></div>
+          </div>
+          <div>
+            <label style="font-size:0.8rem; font-weight:600; text-transform:uppercase; color:var(--text); margin-bottom:.35rem;">Clearance Role</label>
+            <div id="prof-role" style="background:#f8f9fd; border:1.5px solid var(--border); border-radius:8px; padding:.65rem .9rem; font-size:.92rem; color:var(--text); cursor:not-allowed;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="toast-wrap">
+  <div id="app-toast" class="toast align-items-center border-0" role="alert" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toast-msg">Done!</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  if (sessionStorage.getItem('role') !== 'middleman') { window.location.href = '/'; }
+
+  const adminName = sessionStorage.getItem('full_name') || 'Middleman';
+  document.getElementById('admin-display-name').textContent = adminName;
+  document.getElementById('admin-avatar-initials').textContent = adminName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+
+  document.getElementById('prof-fullname').textContent = adminName;
+  document.getElementById('prof-username').textContent = sessionStorage.getItem('username');
+  document.getElementById('prof-role').textContent = 'Dispatcher / Priority Manager';
+
+  let allTickets = [];
+  let allEngineers = [];
+  const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+  const statusClass = { 'Open':'s-open','Assigned':'s-assigned','In Progress':'s-inprogress','Resolved':'s-resolved','Closed':'s-closed' };
+  function statusBadge(s) { return `<span class="badge-status ${statusClass[s]||'s-open'}">${s}</span>`; }
+  function fmtDate(iso) { return iso ? iso.replace('T', ' ').slice(0, 16) : '—'; }
+
+  async function loadEngineers() {
+    const res = await fetch('/api/engineers');
+    const data = await res.json();
+    if (data.success) allEngineers = data.engineers;
+  }
+
+  async function loadAllTickets() {
+    document.getElementById('all-tickets-loading').style.display = 'block';
+    document.getElementById('all-tickets-wrap').style.display    = 'none';
+    try {
+      await loadEngineers();
+      const res  = await fetch('/api/tickets');
+      const data = await res.json();
+      if (data.success) {
+        allTickets = data.tickets || [];
+        renderAllTickets();
+        updateMetrics();
+      } else {
+        showToast(data.error || 'Failed to sync.', 'danger');
+      }
+    } catch (err) {
+      showToast('Connection severed.', 'danger');
+    } finally {
+      document.getElementById('all-tickets-loading').style.display = 'none';
+      document.getElementById('all-tickets-wrap').style.display    = 'block';
+    }
+  }
+
+  async function refreshAll() {
+    await loadAllTickets();
+    showToast('Telemetry synchronized.', 'success');
+  }
+
+  function updateMetrics() {
+    const unassigned = allTickets.filter(t => !t.priority || t.priority === 0).length;
+    const resolved = allTickets.filter(t => ['Resolved','Closed'].includes(t.status)).length;
+    document.getElementById('m-total').textContent = allTickets.length;
+    document.getElementById('m-unassigned').textContent = unassigned;
+    document.getElementById('m-resolved').textContent = resolved;
+  }
+
+  function applyFilters() { renderAllTickets(); }
+
+  function renderAllTickets() {
+    const fSearch = document.getElementById('filter-search').value.toLowerCase();
+
+    const filtered = allTickets.filter(t => {
+      if (fSearch && !String(t.id).includes(fSearch) && !t.description.toLowerCase().includes(fSearch)) return false;
+      return true;
+    });
+
+    const tbody = document.getElementById('all-tickets-tbody');
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="bi bi-x-circle"></i><br/>No active requests found.</div></td></tr>`;
+      return;
+    }
+    
+    tbody.innerHTML = filtered.map(t => {
+      const isDone = ['Resolved','Closed'].includes(t.status);
+      
+      const specialists = allEngineers.filter(e => e.specialty === t.issue_type);
+      const engOptions = specialists.length > 0 
+        ? specialists.map(e => 
+            `<option value="${e.id}" ${t.engineer_id === e.id ? 'selected' : ''}>${e.name}</option>`
+          ).join('')
+        : `<option disabled selected>No ${t.issue_type} Specialists Found</option>`;
+      const imgLink = t.image_path && t.image_path !== 'null'
+        ? `<div class="mt-1"><a href="/${t.image_path}" target="_blank" class="text-decoration-none x-small" style="font-size: 0.7rem;"><i class="bi bi-image"></i> Image</a></div>`
+        : '';
+      
+      return `
+      <tr id="row-${t.id}">
+        <td><span class="ticket-id">#${t.id}</span></td>
+        <td style="font-size:0.82rem">${t.issue_type}</td>
+        <td>${statusBadge(t.status)}</td>
+        <td style="max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:0.82rem" title="${t.description}">${t.description}${imgLink}</td>
+        <td><small class="text-primary fw-bold">${t.notes || 'Analyzing...'}</small></td>
+        <td><span class="eng-id">${t.engineer_id ? 'ENG-'+t.engineer_id : 'None'}</span></td>
+        <td>
+          <div class="d-flex gap-1">
+            <select class="priority-select" id="manual-eng-${t.id}">${engOptions}</select>
+            <button class="btn btn-sm btn-outline-primary" onclick="manualAssign(${t.id})">Assign</button>
+          </div>
+        </td>
+        <td>
+          <div style="display:flex;gap:4px;align-items:center">
+            <select class="priority-select" id="sel-prio-${t.id}">
+              <option value="1" ${t.priority===1?'selected':''}>P1</option>
+              <option value="2" ${t.priority===2?'selected':''}>P2</option>
+              <option value="3" ${t.priority===3?'selected':''}>P3</option>
+              <option value="4" ${t.priority===4?'selected':''}>P4</option>
+              <option value="5" ${t.priority===5?'selected':''}>P5</option>
+            </select>
+            <button class="btn-sm-set" onclick="doSetPriority(${t.id})" ${isDone?'disabled':''}>
+              <i class="bi bi-cpu"></i> Execute
+            </button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  async function manualAssign(tid) {
+    const eid = document.getElementById(`manual-eng-${tid}`).value;
+    const res = await fetch('/api/assign_ticket', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify({ ticket_id: tid, engineer_id: eid })
+    });
+    const data = await res.json();
+    if (data.success) {
+        showToast(`Ticket #${tid} assigned to Engineer ${eid}`, 'success');
+        loadAllTickets();
+    }
+  }
+  async function doSetPriority(ticketId) {
+    const prioVal = document.getElementById(`sel-prio-${ticketId}`).value;
+    try {
+      const res  = await fetch('/api/set_priority', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ ticket_id: ticketId, priority: prioVal })
+      });
+      const data = await res.json();
+      if (data.success) {
+        const idx = allTickets.findIndex(x => x.id === ticketId);
+        if (idx >= 0) allTickets[idx] = { ...allTickets[idx], ...data.ticket };
+        renderAllTickets();
+        updateMetrics();
+        showToast(`Priority override registered for SYS-${ticketId}.`, 'success');
+      } else {
+        showToast(data.error || 'Override rejected.', 'danger');
+      }
+    } catch (err) {
+      showToast('Connection failed.', 'danger');
+    }
+  }
+
+  const sectionMap = { overview:'section-overview', 'all-tickets':'section-all-tickets', profile:'section-profile' };
+  const titleMap   = { overview:'System Overview', 'all-tickets':'Priority Queue', profile:'Operator Profile' };
+
+  function showSection(key) {
+    Object.keys(sectionMap).forEach(k => {
+      document.getElementById(sectionMap[k]).style.display = (k === key) ? '' : 'none';
+    });
+    document.querySelectorAll('.nav-link-item').forEach((el) => {
+      el.classList.remove('active');
+      if (el.getAttribute('onclick') === `showSection('${key}')`) el.classList.add('active');
+    });
+    document.getElementById('topbar-title').textContent = titleMap[key];
+    if (key === 'all-tickets') loadAllTickets();
+    closeSidebar();
+  }
+
+  function showToast(msg, type) {
+    const el = document.getElementById('app-toast');
+    document.getElementById('toast-msg').textContent = msg;
+    el.className = `toast align-items-center border-0 text-bg-${type === 'success' ? 'success' : 'danger'}`;
+    new bootstrap.Toast(el, { delay: 3500 }).show();
+  }
+
+  async function doLogout(e) {
+    e.preventDefault();
+    await fetch('/api/logout', { 
+      method:'POST',
+      headers: {
+        'X-CSRFToken': csrfToken
+      }
+    });
+    sessionStorage.clear();
+    window.location.href = '/';
+  }
+
+  function openSidebar()  { document.getElementById('sidebar').classList.add('open'); document.getElementById('sidebar-overlay').classList.add('show'); }
+  function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-overlay').classList.remove('show'); }
+
+  (async () => { 
+    await loadAllTickets();
+    setInterval(loadAllTickets, 10000); // Auto-check every 10 seconds
+  })();
+</script>
+</body>
+</html>

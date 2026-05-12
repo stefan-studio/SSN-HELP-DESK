@@ -1,0 +1,38 @@
+{
+  "user": {
+    "user_id": 1,
+    "password": "pass",
+    "full_name": "Normal User",
+    "role": "user"
+  },
+  "admin": {
+    "user_id": 2,
+    "password": "pass",
+    "full_name": "Administrator",
+    "role": "admin"
+  },
+  "middleman": {
+    "user_id": 3,
+    "password": "pass",
+    "full_name": "Ticket Middleman",
+    "role": "middleman"
+  },
+  "newuser": {
+    "user_id": 4,
+    "password": "pass",
+    "full_name": "New User",
+    "role": "user"
+  },
+  "Johnny": {
+    "user_id": 5,
+    "password": "p",
+    "full_name": "John Doe",
+    "role": "user"
+  },
+  "ravi": {
+    "user_id": 101,
+    "password": "pass",
+    "full_name": "Ravi Kumar",
+    "role": "engineer"
+  }
+}
